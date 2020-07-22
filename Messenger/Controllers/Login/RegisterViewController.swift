@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import FirebaseAuth
 
 class RegisterViewController: UIViewController {
     
@@ -38,8 +39,6 @@ class RegisterViewController: UIViewController {
     
     private let firstNameTextField: UITextField = {
         let textField = UITextField()
-        textField.autocapitalizationType = .none
-        textField.autocorrectionType = .no
         textField.returnKeyType = .continue
         textField.borderStyle = .roundedRect
         textField.placeholder = "First name..."
@@ -50,8 +49,6 @@ class RegisterViewController: UIViewController {
     
     private let lastNameTextField: UITextField = {
         let textField = UITextField()
-        textField.autocapitalizationType = .none
-        textField.autocorrectionType = .no
         textField.returnKeyType = .continue
         textField.borderStyle = .roundedRect
         textField.placeholder = "Last name..."
@@ -68,7 +65,8 @@ class RegisterViewController: UIViewController {
         textField.borderStyle = .roundedRect
         textField.placeholder = "Email address..."
         textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.textContentType = .emailAddress
+        textField.textContentType = .username
+        textField.keyboardType = .emailAddress
         return textField
     }()
     
@@ -80,7 +78,7 @@ class RegisterViewController: UIViewController {
         textField.borderStyle = .roundedRect
         textField.placeholder = "Password..."
         textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.textContentType = .password
+        textField.textContentType = .newPassword
         textField.isSecureTextEntry = true
         return textField
     }()
@@ -103,6 +101,8 @@ class RegisterViewController: UIViewController {
         view.backgroundColor = .systemBackground
         
         registerButton.addTarget(self, action: #selector(registerButtonTapped), for: .touchUpInside)
+        firstNameTextField.delegate = self
+        lastNameTextField.delegate = self
         emailTextField.delegate = self
         passwordTextField.delegate = self
         imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapChangeProfileImage)))
@@ -178,6 +178,16 @@ class RegisterViewController: UIViewController {
                 alertUserLoginError()
                 return
         }
+        
+        FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password) { (result, error) in
+            if let error = error {
+                print("Error creating user: \(error)")
+                return
+            }
+            
+            let user = result!.user
+            print("Created user: \(user)")
+        }
     }
     
     func alertUserLoginError() {
@@ -200,10 +210,14 @@ class RegisterViewController: UIViewController {
 extension RegisterViewController: UITextFieldDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if textField == emailTextField {
-            passwordTextField.becomeFirstResponder()
-        } else if textField == passwordTextField {
-            registerButtonTapped()
+        switch textField {
+            case firstNameTextField: lastNameTextField.becomeFirstResponder()
+            case lastNameTextField: emailTextField.becomeFirstResponder()
+            case emailTextField: passwordTextField.becomeFirstResponder()
+            case passwordTextField:
+                textField.resignFirstResponder()
+                registerButtonTapped()
+            default: textField.resignFirstResponder()
         }
         
         return true
