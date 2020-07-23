@@ -175,25 +175,33 @@ class RegisterViewController: UIViewController {
             !password.isEmpty,
             password.count >= 6
             else {
-                alertUserLoginError()
+                alertUserRegisterError(message: "Please enter all information to create a new account.")
                 return
         }
         
-        FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password) { [unowned self] (result, error) in
-            if let error = error {
-                print("Error creating user: \(error)")
+        DatabaseManager.shared.userExists(withEmail: email) { [unowned self] (exist) in
+            guard !exist else {
+                self.alertUserRegisterError(message: "A user already exists with email\n\(email)")
                 return
             }
             
-            let user = result!.user
-            print("Created user: \(user)")
-            self.navigationController?.dismiss(animated: true)
+            FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password) { (result, error) in
+                if let error = error {
+                    print("Error creating user: \(error)")
+                    return
+                }
+                
+                DatabaseManager.shared.insertUser(MessengerUser(firstName: firstName,
+                                                                lastName: lastName,
+                                                                emailAddress: email))
+                self.navigationController?.dismiss(animated: true)
+            }
         }
     }
     
-    func alertUserLoginError() {
+    func alertUserRegisterError(message: String) {
         let alertController = UIAlertController(title: "Woops",
-                                                message: "Please enter all information to create a new account.",
+                                                message: message,
                                                 preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: .default))
         present(alertController, animated: true)
