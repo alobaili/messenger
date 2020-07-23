@@ -134,7 +134,7 @@ class LoginViewController: UIViewController {
                 return
         }
         
-        FirebaseAuth.Auth.auth().signIn(withEmail: email, password: password) { (result, error) in
+        FirebaseAuth.Auth.auth().signIn(withEmail: email, password: password) { [unowned self] (result, error) in
             if let error = error {
                 print("Error creating user: \(error)")
                 return
@@ -142,6 +142,7 @@ class LoginViewController: UIViewController {
             
             let user = result!.user
             print("Login successful for user: \(user)")
+            self.navigationController?.dismiss(animated: true)
         }
     }
     

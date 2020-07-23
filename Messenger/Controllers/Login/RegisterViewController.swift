@@ -179,7 +179,7 @@ class RegisterViewController: UIViewController {
                 return
         }
         
-        FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password) { (result, error) in
+        FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password) { [unowned self] (result, error) in
             if let error = error {
                 print("Error creating user: \(error)")
                 return
@@ -187,6 +187,7 @@ class RegisterViewController: UIViewController {
             
             let user = result!.user
             print("Created user: \(user)")
+            self.navigationController?.dismiss(animated: true)
         }
     }
     
