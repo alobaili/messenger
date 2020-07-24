@@ -14,7 +14,7 @@ class ProfileViewController: UIViewController {
     @IBOutlet var tableView: UITableView!
     
     enum Options: String, CaseIterable {
-        case logout = "Log out"
+        case signOut = "Sign Out"
     }
 
     override func viewDidLoad() {
@@ -26,7 +26,7 @@ class ProfileViewController: UIViewController {
     }
     
     func showLoginScreen() {
-        let loginViewController = LoginViewController()
+        let loginViewController = SignInViewController()
         let navigationController = UINavigationController(rootViewController: loginViewController)
         navigationController.modalPresentationStyle = .fullScreen
         navigationController.modalTransitionStyle = .crossDissolve
@@ -62,7 +62,7 @@ extension ProfileViewController: UITableViewDelegate {
             try FirebaseAuth.Auth.auth().signOut()
             showLoginScreen()
         } catch {
-            print("Failed to log out: \(error)")
+            print("Failed to sign out: \(error)")
         }
     }
     

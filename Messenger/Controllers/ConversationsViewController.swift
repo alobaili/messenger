@@ -19,7 +19,7 @@ class ConversationsViewController: UIViewController {
     
     private func validateAuthentication() {
         if FirebaseAuth.Auth.auth().currentUser == nil {
-            let loginViewController = LoginViewController()
+            let loginViewController = SignInViewController()
             let navigationController = UINavigationController(rootViewController: loginViewController)
             navigationController.modalPresentationStyle = .fullScreen
             navigationController.modalTransitionStyle = .crossDissolve

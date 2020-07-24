@@ -1,5 +1,5 @@
 //
-//  LoginViewController.swift
+//  SignInViewController.swift
 //  Messenger
 //
 //  Created by Abdulaziz AlObaili on 21/07/2020.
@@ -9,7 +9,7 @@
 import UIKit
 import FirebaseAuth
 
-class LoginViewController: UIViewController {
+class SignInViewController: UIViewController {
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -60,7 +60,7 @@ class LoginViewController: UIViewController {
     private let loginButton: UIButton = {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle("Log in", for: .normal)
+        button.setTitle("Sign In", for: .normal)
         button.tintColor = .white
         button.backgroundColor = .link
         button.layer.cornerRadius = 12
@@ -71,7 +71,7 @@ class LoginViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = "Log in"
+        title = "Sign In"
         view.backgroundColor = .systemBackground
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Register",
                                                             style: .plain,
@@ -141,14 +141,14 @@ class LoginViewController: UIViewController {
             }
             
             let user = result!.user
-            print("Login successful for user: \(user)")
+            print("Sign in successful for user: \(user)")
             self.navigationController?.dismiss(animated: true)
         }
     }
     
     func alertUserLoginError() {
         let alertController = UIAlertController(title: "Woops",
-                                                message: "Please enter all information to login.",
+                                                message: "Please enter all information to sign in.",
                                                 preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: .default))
         present(alertController, animated: true)
@@ -163,7 +163,7 @@ class LoginViewController: UIViewController {
 }
 
 // MARK: - Text Field Delegate
-extension LoginViewController: UITextFieldDelegate {
+extension SignInViewController: UITextFieldDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if textField == emailTextField {
