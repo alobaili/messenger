@@ -246,6 +246,9 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
     
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
         if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+            // Save the authorized user ID for future reference
+            UserDefaults.standard.set(appleIDCredential.user, forKey: UserDefaults.MessengerKeys.kAppleAuthorizedUserID)
+            
             guard let nonce = currentNonce else {
                 fatalError("Invalid state: A login callback was received, but no login request was sent.")
             }
@@ -282,6 +285,18 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
                                                  firstName: appleIDCredential.fullName?.givenName,
                                                  lastName: appleIDCredential.fullName?.familyName)
                         DatabaseManager.shared.insertUser(user)
+                        
+                        let changeRequest = authResult?.user.createProfileChangeRequest()
+                        changeRequest?.displayName = appleIDCredential.fullName?.givenName
+                        changeRequest?.commitChanges() { (error) in
+                            if let error = error {
+                                print("Error committing profile change request: \(error)")
+                            } else {
+                                if let displayName = Auth.auth().currentUser?.displayName {
+                                    print("Updated display name to: \(displayName)")
+                                }
+                            }
+                        }
                     }
                     self.navigationController?.dismiss(animated: true)
                 }

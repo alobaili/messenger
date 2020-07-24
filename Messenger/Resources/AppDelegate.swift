@@ -8,7 +8,8 @@
 
 import UIKit
 import Firebase
-
+import FirebaseAuth
+import AuthenticationServices
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -19,7 +20,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         FirebaseApp.configure()
         
+        handleAppleIDCredentialRevokedWhileTerminated()
+        
         return true
+    }
+    
+    func handleAppleIDCredentialRevokedWhileTerminated() {
+        if let userID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kAppleAuthorizedUserID) {
+            // Check Apple ID credential state
+            ASAuthorizationAppleIDProvider().getCredentialState(forUserID: userID) { [unowned self] (credentialState, error) in
+                switch credentialState {
+                    case .authorized: break
+                    case .notFound, .transferred, .revoked: self.signOut()
+                    @unknown default:
+                    fatalError("Unhandled unknown case")
+                }
+            }
+        }
+    }
+    
+    fileprivate func signOut() {
+        do {
+            // Remove the user's Sign In with Apple ID
+            if let providerID = Auth.auth().currentUser?.providerData.first?.providerID,
+                providerID == "apple.com" {
+                UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kAppleAuthorizedUserID)
+            }
+            try Auth.auth().signOut()
+        } catch {
+            print("Failed to sign out: \(error)")
+        }
     }
 
     // MARK: UISceneSession Lifecycle

@@ -14,6 +14,7 @@
 		4B0F5D1524C76B07008ADC0C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B0F5D1424C76B07008ADC0C /* Assets.xcassets */; };
 		4B0F5D1824C76B07008ADC0C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4B0F5D1624C76B07008ADC0C /* LaunchScreen.storyboard */; };
 		4B2C7B6424C9FD6F00539653 /* String+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2C7B6324C9FD6F00539653 /* String+.swift */; };
+		4B2C7B6624CB6EE200539653 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2C7B6524CB6EE200539653 /* Constants.swift */; };
 		4B893A7924C76D7D00BB69D4 /* SignInViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B893A7824C76D7D00BB69D4 /* SignInViewController.swift */; };
 		4B893A7B24C76D9C00BB69D4 /* RegisterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B893A7A24C76D9C00BB69D4 /* RegisterViewController.swift */; };
 		4B893A7D24C76E8500BB69D4 /* PhotoViewerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B893A7C24C76E8500BB69D4 /* PhotoViewerViewController.swift */; };
@@ -37,6 +38,7 @@
 		4B0F5D1724C76B07008ADC0C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4B0F5D1924C76B07008ADC0C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4B2C7B6324C9FD6F00539653 /* String+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+.swift"; sourceTree = "<group>"; };
+		4B2C7B6524CB6EE200539653 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		4B49952024C8A78A00046667 /* Messenger.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Messenger.entitlements; sourceTree = "<group>"; };
 		4B893A7824C76D7D00BB69D4 /* SignInViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInViewController.swift; sourceTree = "<group>"; };
 		4B893A7A24C76D9C00BB69D4 /* RegisterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewController.swift; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 				4B0F5D0D24C76B05008ADC0C /* SceneDelegate.swift */,
 				4BB1C16D24C9D97700983920 /* DatabaseManager.swift */,
 				4B2C7B6324C9FD6F00539653 /* String+.swift */,
+				4B2C7B6524CB6EE200539653 /* Constants.swift */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -302,6 +305,7 @@
 				4B0F5D1024C76B05008ADC0C /* ConversationsViewController.swift in Sources */,
 				4B893A7F24C76E9C00BB69D4 /* VideoPlayerViewController.swift in Sources */,
 				4B0F5D0C24C76B05008ADC0C /* AppDelegate.swift in Sources */,
+				4B2C7B6624CB6EE200539653 /* Constants.swift in Sources */,
 				4B893A8324C76EF700BB69D4 /* ProfileViewController.swift in Sources */,
 				4B0F5D0E24C76B05008ADC0C /* SceneDelegate.swift in Sources */,
 				4BB1C17024C9DB8000983920 /* MessengerUser.swift in Sources */,

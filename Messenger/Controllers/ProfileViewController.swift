@@ -8,12 +8,13 @@
 
 import UIKit
 import FirebaseAuth
+import AuthenticationServices
 
 class ProfileViewController: UIViewController {
     
     @IBOutlet var tableView: UITableView!
     
-    enum Options: String, CaseIterable {
+    enum Option: String, CaseIterable {
         case signOut = "Sign Out"
     }
 
@@ -25,6 +26,21 @@ class ProfileViewController: UIViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(appleIDCredentialRevoked),
+                                               name: ASAuthorizationAppleIDProvider.credentialRevokedNotification,
+                                               object: nil)
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        
+        NotificationCenter.default.removeObserver(self, name: ASAuthorizationAppleIDProvider.credentialRevokedNotification, object: nil)
+    }
+    
     func showLoginScreen() {
         let loginViewController = SignInViewController()
         let navigationController = UINavigationController(rootViewController: loginViewController)
@@ -33,18 +49,39 @@ class ProfileViewController: UIViewController {
         present(navigationController, animated: true)
     }
     
+    @objc func appleIDCredentialRevoked() {
+        if let providerID = Auth.auth().currentUser?.providerData.first?.providerID,
+            providerID == "apple.com" {
+            signOut()
+        }
+    }
+    
+    fileprivate func signOut() {
+        do {
+            // Remove the user's Sign In with Apple ID
+            if let providerID = Auth.auth().currentUser?.providerData.first?.providerID,
+                providerID == "apple.com" {
+                UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kAppleAuthorizedUserID)
+            }
+            try Auth.auth().signOut()
+            showLoginScreen()
+        } catch {
+            print("Failed to sign out: \(error)")
+        }
+    }
+    
 
 }
 
 extension ProfileViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        Options.allCases.count
+        Option.allCases.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = Options.allCases[indexPath.row].rawValue
+        cell.textLabel?.text = Option.allCases[indexPath.row].rawValue
         cell.textLabel?.textAlignment = .center
         cell.textLabel?.textColor = .systemRed
         return cell
@@ -58,11 +95,10 @@ extension ProfileViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        do {
-            try FirebaseAuth.Auth.auth().signOut()
-            showLoginScreen()
-        } catch {
-            print("Failed to sign out: \(error)")
+        let option = Option.allCases[indexPath.row]
+        
+        switch option {
+            case .signOut: signOut()
         }
     }
     
