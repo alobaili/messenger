@@ -32,17 +32,16 @@ extension DatabaseManager {
         do {
             let userData = try encoder.encode(user)
             let userDictionary = try JSONSerialization.jsonObject(with: userData, options: .allowFragments) as! [String: Any]
-            database.child(user.emailAddress.safeForDatabaseReferenceChild()).setValue(userDictionary)
+            database.child(user.id.safeForDatabaseReferenceChild()).setValue(userDictionary)
         } catch {
             fatalError("\(error)")
         }
     }
     
-    public func userExists(withEmail email: String, completion: @escaping (Bool) -> Void) {
-        database.child(email.safeForDatabaseReferenceChild()).observeSingleEvent(of: .value) { (snapshot) in
-            completion((snapshot.value as? String) != nil)
+    public func userExists(withID id: String, completion: @escaping (Bool) -> Void) {
+        database.child(id.safeForDatabaseReferenceChild()).observeSingleEvent(of: .value) { (snapshot) in
+            completion(snapshot.exists())
         }
     }
-    
     
 }

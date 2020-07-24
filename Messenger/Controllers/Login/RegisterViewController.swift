@@ -179,7 +179,7 @@ class RegisterViewController: UIViewController {
                 return
         }
         
-        DatabaseManager.shared.userExists(withEmail: email) { [unowned self] (exist) in
+        DatabaseManager.shared.userExists(withID: email) { [unowned self] (exist) in
             guard !exist else {
                 self.alertUserRegisterError(message: "A user already exists with email\n\(email)")
                 return
@@ -191,9 +191,9 @@ class RegisterViewController: UIViewController {
                     return
                 }
                 
-                DatabaseManager.shared.insertUser(MessengerUser(firstName: firstName,
-                                                                lastName: lastName,
-                                                                emailAddress: email))
+                DatabaseManager.shared.insertUser(MessengerUser(id: email,
+                                                                firstName: firstName,
+                                                                lastName: lastName))
                 self.navigationController?.dismiss(animated: true)
             }
         }

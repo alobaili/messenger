@@ -7,9 +7,9 @@
 //
 
 struct MessengerUser: Encodable {
-    var firstName: String
-    var lastName: String
-    var emailAddress: String
+    var id: String
+    var firstName: String?
+    var lastName: String?
     
     enum CodingKeys: String, CodingKey {
         case firstName, lastName

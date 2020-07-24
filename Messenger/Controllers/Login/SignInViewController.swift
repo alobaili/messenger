@@ -7,7 +7,9 @@
 //
 
 import UIKit
+import CryptoKit
 import FirebaseAuth
+import AuthenticationServices
 
 class SignInViewController: UIViewController {
     
@@ -67,6 +69,12 @@ class SignInViewController: UIViewController {
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 20)
         return button
     }()
+    
+    private let signInWithAppleButton: ASAuthorizationAppleIDButton = {
+        let button = ASAuthorizationAppleIDButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -78,6 +86,7 @@ class SignInViewController: UIViewController {
                                                             target: self,
                                                             action: #selector(didTapRegister))
         loginButton.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
+        signInWithAppleButton.addTarget(self, action: #selector(signInWithAppleButtonTapped), for: .touchUpInside)
         emailTextField.delegate = self
         passwordTextField.delegate = self
         
@@ -87,6 +96,7 @@ class SignInViewController: UIViewController {
         contentView.addSubview(emailTextField)
         contentView.addSubview(passwordTextField)
         contentView.addSubview(loginButton)
+        contentView.addSubview(signInWithAppleButton)
         
         NSLayoutConstraint.activate([
             scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -117,7 +127,12 @@ class SignInViewController: UIViewController {
             loginButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -30),
             loginButton.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 20),
             loginButton.heightAnchor.constraint(equalToConstant: 44),
-            loginButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30)
+            
+            signInWithAppleButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
+            signInWithAppleButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -30),
+            signInWithAppleButton.topAnchor.constraint(equalTo: loginButton.bottomAnchor, constant: 20),
+            signInWithAppleButton.heightAnchor.constraint(equalToConstant: 44),
+            signInWithAppleButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30)
         ])
     }
     
@@ -144,6 +159,25 @@ class SignInViewController: UIViewController {
             print("Sign in successful for user: \(user)")
             self.navigationController?.dismiss(animated: true)
         }
+    }
+    
+    fileprivate var currentNonce: String?
+    
+    @objc private func signInWithAppleButtonTapped() {
+        let nonce = String.randomNonceString()
+        currentNonce = nonce
+        
+        let provider = ASAuthorizationAppleIDProvider()
+        let request = provider.createRequest()
+        request.requestedScopes = [.email, .fullName]
+        request.nonce = String.sha256(nonce)
+        
+        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+        
+        authorizationController.presentationContextProvider = self
+        authorizationController.delegate = self
+        
+        authorizationController.performRequests()
     }
     
     func alertUserLoginError() {
@@ -173,6 +207,86 @@ extension SignInViewController: UITextFieldDelegate {
         }
         
         return true
+    }
+    
+    
+}
+
+// MARK: - Sign In with Apple
+
+extension SignInViewController: ASAuthorizationControllerPresentationContextProviding {
+    
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        self.view.window!
+    }
+    
+    
+}
+
+extension SignInViewController: ASAuthorizationControllerDelegate {
+    
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        guard let error = error as? ASAuthorizationError else { return }
+        
+        switch error.code {
+            case .unknown:
+            break
+            case .canceled:
+            break
+            case .invalidResponse:
+            break
+            case .notHandled:
+            break
+            case .failed:
+            break
+            @unknown default:
+            break
+        }
+    }
+    
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+            guard let nonce = currentNonce else {
+                fatalError("Invalid state: A login callback was received, but no login request was sent.")
+            }
+            
+            guard let appleIDToken = appleIDCredential.identityToken else {
+                print("Unable to fetch identity token")
+                return
+            }
+            
+            guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+                print("Unable to serialize token string from data: \(appleIDToken.debugDescription)")
+                return
+            }
+            
+            // Initialize a Firebase credential.
+            let credential = OAuthProvider.credential(withProviderID: "apple.com",
+                                                      idToken: idTokenString,
+                                                      rawNonce: nonce)
+            
+            // Sign in with Firebase.
+            Auth.auth().signIn(with: credential) { [unowned self] (authResult, error) in
+                if let error = error {
+                    // Error. If error.code == .MissingOrInvalidNonce, make sure
+                    // you're sending the SHA256-hashed nonce as a hex string with
+                    // your request to Apple.
+                    print(error.localizedDescription)
+                    return
+                }
+                
+                // User is signed in to Firebase with Apple.
+                DatabaseManager.shared.userExists(withID: appleIDCredential.user) { (exists) in
+                    if !exists {
+                        let user = MessengerUser(id: appleIDCredential.user,
+                                                 firstName: appleIDCredential.fullName?.givenName,
+                                                 lastName: appleIDCredential.fullName?.familyName)
+                        DatabaseManager.shared.insertUser(user)
+                    }
+                    self.navigationController?.dismiss(animated: true)
+                }
+            }
+        }
     }
     
     
