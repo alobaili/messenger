@@ -36,6 +36,8 @@ class ConversationsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .compose, target: self, action: #selector(didTapComposeButton))
+        
         tableView.dataSource = self
         tableView.delegate = self
         
@@ -51,6 +53,12 @@ class ConversationsViewController: UIViewController {
         super.viewDidAppear(animated)
         
         validateAuthentication()
+    }
+    
+    @objc private func didTapComposeButton() {
+        let viewController = NewConversationViewController()
+        let navigationController = UINavigationController(rootViewController: viewController)
+        present(navigationController, animated: true)
     }
     
     private func setupAutoLayout() {
