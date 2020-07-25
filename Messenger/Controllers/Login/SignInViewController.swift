@@ -10,8 +10,11 @@ import UIKit
 import CryptoKit
 import FirebaseAuth
 import AuthenticationServices
+import JGProgressHUD
 
 class SignInViewController: UIViewController {
+    
+    private let progressHUD = JGProgressHUD(style: .dark)
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -149,7 +152,13 @@ class SignInViewController: UIViewController {
                 return
         }
         
+        progressHUD.show(in: view)
+        
         FirebaseAuth.Auth.auth().signIn(withEmail: email, password: password) { [unowned self] (result, error) in
+            DispatchQueue.main.async {
+                self.progressHUD.dismiss()
+            }
+            
             if let error = error {
                 print("Error creating user: \(error)")
                 return
@@ -268,8 +277,14 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
                                                       idToken: idTokenString,
                                                       rawNonce: nonce)
             
+            progressHUD.show(in: view)
+            
             // Sign in with Firebase.
             Auth.auth().signIn(with: credential) { [unowned self] (authResult, error) in
+                DispatchQueue.main.async {
+                    self.progressHUD.dismiss()
+                }
+                
                 if let error = error {
                     // Error. If error.code == .MissingOrInvalidNonce, make sure
                     // you're sending the SHA256-hashed nonce as a hex string with

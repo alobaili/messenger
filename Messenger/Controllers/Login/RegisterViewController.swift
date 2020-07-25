@@ -8,8 +8,11 @@
 
 import UIKit
 import FirebaseAuth
+import JGProgressHUD
 
 class RegisterViewController: UIViewController {
+    
+    private let progressHUD = JGProgressHUD(style: .dark)
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -179,7 +182,13 @@ class RegisterViewController: UIViewController {
                 return
         }
         
+        progressHUD.show(in: view)
+        
         DatabaseManager.shared.userExists(withID: email) { [unowned self] (exist) in
+            DispatchQueue.main.async {
+                self.progressHUD.dismiss()
+            }
+            
             guard !exist else {
                 self.alertUserRegisterError(message: "A user already exists with email\n\(email)")
                 return
