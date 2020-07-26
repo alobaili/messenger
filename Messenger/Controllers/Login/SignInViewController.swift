@@ -299,21 +299,39 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
                         let user = MessengerUser(id: appleIDCredential.user,
                                                  firstName: appleIDCredential.fullName?.givenName,
                                                  lastName: appleIDCredential.fullName?.familyName)
-                        DatabaseManager.shared.insertUser(user)
-                        
-                        let changeRequest = authResult?.user.createProfileChangeRequest()
-                        changeRequest?.displayName = appleIDCredential.fullName?.givenName
-                        changeRequest?.commitChanges() { (error) in
-                            if let error = error {
-                                print("Error committing profile change request: \(error)")
-                            } else {
-                                if let displayName = Auth.auth().currentUser?.displayName {
-                                    print("Updated display name to: \(displayName)")
+                        DatabaseManager.shared.insertUser(user) { success in
+                            if success {
+                                let changeRequest = authResult?.user.createProfileChangeRequest()
+                                changeRequest?.displayName = appleIDCredential.fullName?.givenName
+                                changeRequest?.commitChanges() { (error) in
+                                    if let error = error {
+                                        print("Error committing profile change request: \(error)")
+                                    } else {
+                                        guard let image = UIImage(systemName: "person.fill"), let data = image.pngData() else {
+                                            return
+                                        }
+                                        
+                                        let fileName = user.profileImageFileName
+                                        
+                                        StorageManager.shared.uploadProfileImage(with: data, fileName: fileName) { (result) in
+                                            switch result {
+                                                case .success(let urlString):
+                                                    print(urlString)
+                                                    UserDefaults.standard.set(urlString, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
+                                                    self.navigationController?.dismiss(animated: true)
+                                                case .failure(let error):
+                                                    print(error)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
+                        
+                        
+                    } else {
+                        self.navigationController?.dismiss(animated: true)
                     }
-                    self.navigationController?.dismiss(animated: true)
                 }
             }
         }

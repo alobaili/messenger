@@ -28,11 +28,19 @@ final class DatabaseManager {
 
 extension DatabaseManager {
     
-    public func insertUser(_ user: MessengerUser) {
+    public func insertUser(_ user: MessengerUser, completion: @escaping (Bool) -> Void) {
         do {
             let userData = try encoder.encode(user)
             let userDictionary = try JSONSerialization.jsonObject(with: userData, options: .allowFragments) as! [String: Any]
-            database.child(user.id.safeForDatabaseReferenceChild()).setValue(userDictionary)
+            database.child(user.id.safeForDatabaseReferenceChild()).setValue(userDictionary) { (error, databaseReference) in
+                if let error = error {
+                    print("Failed to insert the user into the database: \(error)")
+                    completion(false)
+                    return
+                }
+                
+                completion(true)
+            }
         } catch {
             fatalError("\(error)")
         }

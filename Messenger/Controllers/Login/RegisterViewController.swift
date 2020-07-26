@@ -200,10 +200,28 @@ class RegisterViewController: UIViewController {
                     return
                 }
                 
-                DatabaseManager.shared.insertUser(MessengerUser(id: email,
-                                                                firstName: firstName,
-                                                                lastName: lastName))
-                self.navigationController?.dismiss(animated: true)
+                let user = MessengerUser(id: email, firstName: firstName, lastName: lastName)
+                
+                DatabaseManager.shared.insertUser(user) { success in
+                    if success {
+                        guard let image = self.imageView.image, let data = image.pngData() else {
+                            return
+                        }
+                        
+                        let fileName = user.profileImageFileName
+                        
+                        StorageManager.shared.uploadProfileImage(with: data, fileName: fileName) { (result) in
+                            switch result {
+                                case .success(let urlString):
+                                    print(urlString)
+                                    UserDefaults.standard.set(urlString, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
+                                self.navigationController?.dismiss(animated: true)
+                                case .failure(let error):
+                                    print(error)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

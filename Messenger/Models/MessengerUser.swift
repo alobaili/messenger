@@ -11,6 +11,10 @@ struct MessengerUser: Encodable {
     var firstName: String?
     var lastName: String?
     
+    var profileImageFileName: String {
+        "\(id.safeForDatabaseReferenceChild())_profile_image.png"
+    }
+    
     enum CodingKeys: String, CodingKey {
         case firstName, lastName
     }

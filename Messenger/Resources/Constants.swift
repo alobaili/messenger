@@ -12,6 +12,7 @@ extension UserDefaults {
     
     enum MessengerKeys {
         static let kAppleAuthorizedUserID = "kAppleAuthorizedUserID"
+        static let kProfileImageURL = "kProfileImageURL"
     }
     
     
