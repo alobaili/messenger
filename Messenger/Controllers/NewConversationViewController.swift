@@ -119,14 +119,19 @@ extension NewConversationViewController: UISearchBarDelegate {
             return
         }
         results.removeAll()
-        progressHUD.show(in: view)
         searchUsers(query: text)
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        results = users
+        updateUI()
     }
     
     func searchUsers(query: String) {
         if hasFetched {
             filterUsers(with: query)
         } else {
+            progressHUD.show(in: view)
             DatabaseManager.shared.getAllUsers { [unowned self] (result) in
                 switch result {
                     case .success(let users):
