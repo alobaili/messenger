@@ -11,6 +11,10 @@ import FirebaseDatabase
 
 final class DatabaseManager {
     
+    public enum DatabaseError: Error {
+        case failedToFetch
+    }
+    
     static let shared = DatabaseManager()
     private let database = Database.database().reference()
     
@@ -32,7 +36,7 @@ extension DatabaseManager {
         do {
             let userData = try encoder.encode(user)
             let userDictionary = try JSONSerialization.jsonObject(with: userData, options: .allowFragments) as! [String: Any]
-            database.child(user.id.safeForDatabaseReferenceChild()).setValue(userDictionary) { (error, databaseReference) in
+            database.child("users").child(user.id.safeForDatabaseReferenceChild()).setValue(userDictionary) { (error, databaseReference) in
                 if let error = error {
                     print("Failed to insert the user into the database: \(error)")
                     completion(false)
@@ -47,8 +51,19 @@ extension DatabaseManager {
     }
     
     public func userExists(withID id: String, completion: @escaping (Bool) -> Void) {
-        database.child(id.safeForDatabaseReferenceChild()).observeSingleEvent(of: .value) { (snapshot) in
+        database.child("users").child(id.safeForDatabaseReferenceChild()).observeSingleEvent(of: .value) { (snapshot) in
             completion(snapshot.exists())
+        }
+    }
+    
+    public func getAllUsers(completion: @escaping (Result<[String: [String: String]],Error>) -> Void) {
+        database.child("users").observeSingleEvent(of: .value) { (snapshot) in
+            guard let value = snapshot.value as? [String: [String: String]] else {
+                completion(.failure(DatabaseError.failedToFetch))
+                return
+            }
+            
+            completion(.success(value))
         }
     }
     

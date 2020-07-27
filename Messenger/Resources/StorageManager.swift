@@ -27,7 +27,7 @@ final class StorageManager {
     ///   - data: The profile image data.
     ///   - fileName: The file name that will store the image data.
     ///   - completion: The completion takes a `Result` that succeeds with a `String` representing the URL of the uploaded image and fails with an `Error`, and returns `Void`.
-    public func uploadProfileImage(with data: Data, fileName: String, completion: @escaping (Result<String, Error>) -> Void) {
+    public func uploadProfileImage(with data: Data, fileName: String, completion: @escaping (Result<URL, Error>) -> Void) {
         storage.child("images/\(fileName)").putData(data, metadata: nil) { (metadata, error) in
             if let error = error {
                 print("Failed to upload: \(error)")
@@ -35,17 +35,25 @@ final class StorageManager {
                 return
             }
             
-            self.storage.child("images/\(fileName)").downloadURL { (url, error) in
-                if let error = error {
-                    print("Failed to get download URL: \(error)")
-                    completion(.failure(StorageError.failedToGetDownloadURL))
-                    return
+            self.getDownloadURL(for: "images/\(fileName)") { (result) in
+                switch result {
+                    case .success(let url): completion(.success(url))
+                    case .failure(let error): completion(.failure(error))
                 }
-                
-                let urlString = url!.absoluteString
-                print("Download URL returned: \(urlString)")
-                completion(.success(urlString))
             }
+        }
+    }
+    
+    public func getDownloadURL(for path: String, completion: @escaping (Result<URL, Error>) -> Void) {
+        storage.child(path).downloadURL { (url, error) in
+            if let error = error {
+                print("Failed to get download URL: \(error)")
+                completion(.failure(StorageError.failedToGetDownloadURL))
+                return
+            }
+            
+            print("Download URL returned: \(url!)")
+            completion(.success(url!))
         }
     }
     

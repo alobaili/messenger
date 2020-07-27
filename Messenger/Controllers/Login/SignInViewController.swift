@@ -88,7 +88,7 @@ class SignInViewController: UIViewController {
                                                             style: .plain,
                                                             target: self,
                                                             action: #selector(didTapRegister))
-        loginButton.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
+        loginButton.addTarget(self, action: #selector(signInButtonTapped), for: .touchUpInside)
         signInWithAppleButton.addTarget(self, action: #selector(signInWithAppleButtonTapped), for: .touchUpInside)
         emailTextField.delegate = self
         passwordTextField.delegate = self
@@ -139,7 +139,7 @@ class SignInViewController: UIViewController {
         ])
     }
     
-    @objc private func loginButtonTapped() {
+    @objc private func signInButtonTapped() {
         view.endEditing(false)
         
         guard let email = emailTextField.text,
@@ -166,6 +166,9 @@ class SignInViewController: UIViewController {
             
             let user = result!.user
             print("Sign in successful for user: \(user)")
+            
+            UserDefaults.standard.set(email, forKey: UserDefaults.MessengerKeys.kUserID)
+            
             self.navigationController?.dismiss(animated: true)
         }
     }
@@ -212,7 +215,7 @@ extension SignInViewController: UITextFieldDelegate {
         if textField == emailTextField {
             passwordTextField.becomeFirstResponder()
         } else if textField == passwordTextField {
-            loginButtonTapped()
+            signInButtonTapped()
         }
         
         return true
@@ -256,7 +259,7 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
         if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
             // Save the authorized user ID for future reference
-            UserDefaults.standard.set(appleIDCredential.user, forKey: UserDefaults.MessengerKeys.kAppleAuthorizedUserID)
+            UserDefaults.standard.set(appleIDCredential.user, forKey: UserDefaults.MessengerKeys.kUserID)
             
             guard let nonce = currentNonce else {
                 fatalError("Invalid state: A login callback was received, but no login request was sent.")
@@ -315,9 +318,9 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
                                         
                                         StorageManager.shared.uploadProfileImage(with: data, fileName: fileName) { (result) in
                                             switch result {
-                                                case .success(let urlString):
-                                                    print(urlString)
-                                                    UserDefaults.standard.set(urlString, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
+                                                case .success(let url):
+                                                    print(url)
+                                                    UserDefaults.standard.set(url, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
                                                     self.navigationController?.dismiss(animated: true)
                                                 case .failure(let error):
                                                     print(error)

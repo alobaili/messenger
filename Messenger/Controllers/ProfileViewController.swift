@@ -24,6 +24,7 @@ class ProfileViewController: UIViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.tableHeaderView = createTableHeaderView()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -61,13 +62,66 @@ class ProfileViewController: UIViewController {
             // Remove the user's Sign In with Apple ID
             if let providerID = Auth.auth().currentUser?.providerData.first?.providerID,
                 providerID == "apple.com" {
-                UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kAppleAuthorizedUserID)
+                UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kUserID)
             }
             try Auth.auth().signOut()
             showLoginScreen()
         } catch {
             print("Failed to sign out: \(error)")
         }
+    }
+    
+    func createTableHeaderView() -> UIView? {
+        guard let id = UserDefaults.standard.value(forKey: UserDefaults.MessengerKeys.kUserID) as? String else {
+            return nil
+        }
+        
+        let safeID = id.safeForDatabaseReferenceChild()
+        let fileName = "\(safeID)_profile_image.png"
+        let path = "images/\(fileName)"
+        
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 200))
+        
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.backgroundColor = .secondarySystemBackground
+        imageView.contentMode = .scaleAspectFill
+        imageView.layer.borderColor = UIColor.systemGray.cgColor
+        imageView.layer.borderWidth = 2
+        imageView.layer.masksToBounds = true
+        imageView.layer.cornerRadius = 75
+
+        headerView.addSubview(imageView)
+        NSLayoutConstraint.activate([
+            imageView.heightAnchor.constraint(equalToConstant: 150),
+            imageView.widthAnchor.constraint(equalToConstant: 150),
+            imageView.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor)
+        ])
+        
+        StorageManager.shared.getDownloadURL(for: path) { [unowned self] (result) in
+            switch result {
+                case .success(let url):
+                    self.downloadImage(for: imageView, url: url)
+                case .failure(let error):
+                    print("Failed to get download URL: \(error)")
+            }
+        }
+
+        return headerView
+    }
+    
+    func downloadImage(for imageView: UIImageView, url: URL) {
+        URLSession.shared.dataTask(with: url) { (data, _, error) in
+            guard let data = data else {
+                return
+            }
+            
+            DispatchQueue.main.async {
+                let image = UIImage(data: data)
+                imageView.image = image
+            }
+        }.resume()
     }
     
 

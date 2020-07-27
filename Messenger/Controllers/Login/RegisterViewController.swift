@@ -212,9 +212,9 @@ class RegisterViewController: UIViewController {
                         
                         StorageManager.shared.uploadProfileImage(with: data, fileName: fileName) { (result) in
                             switch result {
-                                case .success(let urlString):
-                                    print(urlString)
-                                    UserDefaults.standard.set(urlString, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
+                                case .success(let url):
+                                    print(url)
+                                    UserDefaults.standard.set(url, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
                                 self.navigationController?.dismiss(animated: true)
                                 case .failure(let error):
                                     print(error)

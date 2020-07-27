@@ -26,7 +26,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func handleAppleIDCredentialRevokedWhileTerminated() {
-        if let userID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kAppleAuthorizedUserID) {
+        if let userID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) {
             // Check Apple ID credential state
             ASAuthorizationAppleIDProvider().getCredentialState(forUserID: userID) { [unowned self] (credentialState, error) in
                 switch credentialState {
@@ -44,7 +44,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // Remove the user's Sign In with Apple ID
             if let providerID = Auth.auth().currentUser?.providerData.first?.providerID,
                 providerID == "apple.com" {
-                UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kAppleAuthorizedUserID)
+                UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kUserID)
             }
             try Auth.auth().signOut()
         } catch {
