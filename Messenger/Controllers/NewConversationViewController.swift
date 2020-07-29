@@ -13,8 +13,8 @@ class NewConversationViewController: UIViewController {
     
     private let progressHUD = JGProgressHUD(style: .dark)
     
-    private var users = [String: [String: String]]()
-    private var results = [String: [String: String]]()
+    private var users = [Dictionary<String, [String : String]>.Element]()
+    private var results = [Dictionary<String, [String : String]>.Element]()
     private var hasFetched = false
     
     private lazy var searchController: UISearchController = {
@@ -92,14 +92,14 @@ class NewConversationViewController: UIViewController {
 extension NewConversationViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        results.keys.count
+        results.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let firstName = Array(results.values)[indexPath.row]["first_name"]
-        let lastName = Array(results.values)[indexPath.row]["last_name"]
-        cell.textLabel?.text = "\(firstName ?? "") \(lastName ?? "")"
+        let firstName = results[indexPath.row].value["first_name"]!
+        let lastName = results[indexPath.row].value["last_name"]!
+        cell.textLabel?.text = "\(firstName) \(lastName)"
         return cell
     }
     
@@ -109,6 +109,8 @@ extension NewConversationViewController: UITableViewDataSource {
 extension NewConversationViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        
+        
     }
 }
 

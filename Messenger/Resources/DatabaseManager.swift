@@ -56,14 +56,20 @@ extension DatabaseManager {
         }
     }
     
-    public func getAllUsers(completion: @escaping (Result<[String: [String: String]],Error>) -> Void) {
+    public func getAllUsers(completion: @escaping (Result<[Dictionary<String, [String : String]>.Element],Error>) -> Void) {
         database.child("users").observeSingleEvent(of: .value) { (snapshot) in
             guard let value = snapshot.value as? [String: [String: String]] else {
                 completion(.failure(DatabaseError.failedToFetch))
                 return
             }
             
-            completion(.success(value))
+            let users = value.sorted { (lhs, rhs) -> Bool in
+                let lhsFirstName = lhs.value["first_name"]!
+                let rhsFirstName = rhs.value["first_name"]!
+                return lhsFirstName < rhsFirstName
+            }
+            
+            completion(.success(users))
         }
     }
     
