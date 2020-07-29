@@ -11,10 +11,12 @@ import JGProgressHUD
 
 class NewConversationViewController: UIViewController {
     
+    public var completion: ((Dictionary<String, [String: String]>.Element) -> Void)?
+    
     private let progressHUD = JGProgressHUD(style: .dark)
     
-    private var users = [Dictionary<String, [String : String]>.Element]()
-    private var results = [Dictionary<String, [String : String]>.Element]()
+    private var users = [Dictionary<String, [String: String]>.Element]()
+    private var results = [Dictionary<String, [String: String]>.Element]()
     private var hasFetched = false
     
     private lazy var searchController: UISearchController = {
@@ -110,7 +112,10 @@ extension NewConversationViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        
+        let selectedUserData = results[indexPath.row]
+        presentingViewController?.dismiss(animated: true) { [unowned self] in
+            self.completion?(selectedUserData)
+        }
     }
 }
 

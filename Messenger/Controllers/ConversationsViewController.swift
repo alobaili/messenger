@@ -57,8 +57,27 @@ class ConversationsViewController: UIViewController {
     
     @objc private func didTapComposeButton() {
         let viewController = NewConversationViewController()
+        
+        viewController.completion = { [unowned self] (selectedUserData) in
+            self.createNewConversation(forUser: selectedUserData)
+        }
+        
         let navigationController = UINavigationController(rootViewController: viewController)
         present(navigationController, animated: true)
+    }
+    
+    private func createNewConversation(forUser user: Dictionary<String, [String : String]>.Element) {
+        guard
+            let firstName = user.value["first_name"],
+            let lastName = user.value["last_name"]
+            else {
+            return
+        }
+        let viewController = ChatViewController(userID: user.key)
+        viewController.isNewConversation = true
+        viewController.title = "\(firstName) \(lastName)"
+        viewController.navigationItem.largeTitleDisplayMode = .never
+        navigationController?.pushViewController(viewController, animated: true)
     }
     
     private func setupAutoLayout() {
@@ -115,7 +134,7 @@ extension ConversationsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        let viewController = ChatViewController()
+        let viewController = ChatViewController(userID: "")
         viewController.title = "Max Pain"
         viewController.navigationItem.largeTitleDisplayMode = .never
         navigationController?.pushViewController(viewController, animated: true)

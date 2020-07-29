@@ -8,6 +8,7 @@
 
 import UIKit
 import MessageKit
+import InputBarAccessoryView
 
 struct Message: MessageType {
     
@@ -19,6 +20,22 @@ struct Message: MessageType {
     
 }
 
+extension MessageKind: CustomStringConvertible {
+    public var description: String {
+        switch self {
+            case .text: return "text"
+            case .attributedText: return "attributed_text"
+            case .photo: return "photo"
+            case .video: return "video"
+            case .location: return "location"
+            case .emoji: return "emoji"
+            case .audio: return "audio"
+            case .contact: return "contact"
+            case .custom: return "custom"
+        }
+    }
+}
+
 struct Sender: SenderType {
     
     var senderId: String
@@ -28,11 +45,24 @@ struct Sender: SenderType {
 
 class ChatViewController: MessagesViewController {
     
+    public var isNewConversation = false
+    public let otherUserID: String
+    
     private var messages = [Message]()
-    private var dummySender = Sender(senderId: "1", displayName: "Abdulaziz", photoURL: "")
-    private var dummyReceiver = Sender(senderId: "2", displayName: "Max", photoURL: "")
+    private var currentUser = Sender(senderId: UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID)!,
+                                     displayName: "Abdulaziz",
+                                     photoURL: "")
     
 
+    init(userID: String) {
+        otherUserID = userID
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -41,15 +71,13 @@ class ChatViewController: MessagesViewController {
         messagesCollectionView.messagesDataSource = self
         messagesCollectionView.messagesLayoutDelegate = self
         messagesCollectionView.messagesDisplayDelegate = self
-        
-        appendDummyMessages()
+        messageInputBar.delegate = self
     }
     
-    private func appendDummyMessages() {
-        messages = [
-            Message(sender: dummySender, messageId: "1", sentDate: Date(), kind: .text("Hello")),
-            Message(sender: dummyReceiver, messageId: "2", sentDate: Date().addingTimeInterval(5), kind: .text("Hi"))
-        ]
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        messageInputBar.inputTextView.becomeFirstResponder()
     }
     
 
@@ -58,7 +86,7 @@ class ChatViewController: MessagesViewController {
 extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, MessagesDisplayDelegate {
     
     func currentSender() -> SenderType {
-        dummySender
+        currentUser
     }
     
     func messageForItem(at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> MessageType {
@@ -70,4 +98,37 @@ extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, Messag
     }
     
     
+}
+
+extension ChatViewController: InputBarAccessoryViewDelegate {
+    
+    func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String) {
+        guard !text.replacingOccurrences(of: " ", with: "").isEmpty else { return }
+        
+        print("Sending: \(text)")
+        
+        if isNewConversation {
+            // Create a new conversation in the database
+            let message = Message(sender: currentUser, messageId: createMessageID(), sentDate: Date(), kind: .text(text))
+            
+            DatabaseManager.shared.createNewConversation(withUserID: otherUserID, firstMessage: message) { [unowned self] (success) in
+                if success {
+                    print("message sent")
+                } else {
+                    print("failed to send message")
+                }
+            }
+        } else {
+            // Append to the existing conversation
+        }
+    }
+    
+    private func createMessageID() -> String {
+        // date, otherUserID, currentUserID, UUID
+        let id = "\(UUID().uuidString)_\(Date().timeIntervalSinceReferenceDate)"
+            .replacingOccurrences(of: " ", with: "-")
+            .safeForDatabaseReferenceChild()
+        print("created message ID: \(id)")
+        return id
+    }
 }
