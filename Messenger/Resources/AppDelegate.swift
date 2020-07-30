@@ -45,8 +45,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             if let providerID = Auth.auth().currentUser?.providerData.first?.providerID,
                 providerID == "apple.com" {
                 UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kUserID)
+                try Auth.auth().signOut()
             }
-            try Auth.auth().signOut()
         } catch {
             print("Failed to sign out: \(error)")
         }
