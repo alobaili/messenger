@@ -78,7 +78,7 @@ class ConversationsViewController: UIViewController {
             else {
             return
         }
-        let viewController = ChatViewController(userID: user.key)
+        let viewController = ChatViewController(userID: user.key, conversationID: nil)
         viewController.isNewConversation = true
         viewController.title = "\(firstName) \(lastName)"
         viewController.navigationItem.largeTitleDisplayMode = .never
@@ -163,7 +163,7 @@ extension ConversationsViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         let conversation = conversations[indexPath.row]
         
-        let viewController = ChatViewController(userID: conversation.otherUserID)
+        let viewController = ChatViewController(userID: conversation.otherUserID, conversationID: conversation.id)
         viewController.title = conversation.name
         viewController.navigationItem.largeTitleDisplayMode = .never
         navigationController?.pushViewController(viewController, animated: true)

@@ -8,6 +8,7 @@
 
 import Foundation
 import FirebaseDatabase
+import MessageKit
 
 final class DatabaseManager {
     
@@ -88,7 +89,8 @@ extension DatabaseManager {
         let safeCurrentUserID = currentUserID.safeForDatabaseReferenceChild()
         
         let reference = database.child("users").child(safeCurrentUserID)
-        reference.observeSingleEvent(of: .value) { (snapshot) in
+        
+        reference.observeSingleEvent(of: .value) { [unowned self] (snapshot) in
             guard snapshot.exists(), var user = snapshot.value as? [String: Any] else {
                 print("User ID '\(safeCurrentUserID)' was not found.")
                 completion(false)
@@ -131,6 +133,37 @@ extension DatabaseManager {
                 ],
             ]
             
+            let recipientNewConversation: [String: Any] = [
+                "id": conversationID,
+                "other_user_id": safeCurrentUserID,
+                "name": "Self",
+                "latest_message": [
+                    "date": self.iso8601DateFormatter.string(from: firstMessage.sentDate),
+                    "is_read": false,
+                    "message": message
+                ],
+            ]
+            
+            // Update recipient user conversations array
+            self.database.child("users").child("\(userID.safeForDatabaseReferenceChild())/conversations")
+                .observeSingleEvent(of: .value) { [unowned self] (snapshot) in
+                    if var conversations = snapshot.value as? [[String: Any]] {
+                        // conversations array for current user
+                        // append the new conversation to it
+                        conversations.append(recipientNewConversation)
+                        self.database.child("users")
+                            .child("\(userID.safeForDatabaseReferenceChild())/conversations")
+                            .setValue(conversations)
+                    } else {
+                        // conversations array doesn't exists
+                        // create it
+                        self.database.child("users")
+                            .child("\(userID.safeForDatabaseReferenceChild())/conversations")
+                            .setValue([recipientNewConversation])
+                    }
+                }
+            
+            // Update current user conversations array
             if var conversations = user["conversations"] as? [[String: Any]] {
                 // conversations array for current user
                 // append the new conversation to it
@@ -239,8 +272,37 @@ extension DatabaseManager {
         }
     }
     
-    public func getAllMessages(forConversationID conversationID: String, completion: @escaping (Result<String, Error>) -> Void) {
-        
+    public func getAllMessages(forConversationID conversationID: String, completion: @escaping (Result<[Message], Error>) -> Void) {
+        database.child("\(conversationID.safeForDatabaseReferenceChild())/messages").observe(.value) { (snapshot) in
+            guard let value = snapshot.value as? [[String: Any]] else {
+                completion(.failure(DatabaseError.failedToFetch))
+                return
+            }
+            
+            let messages: [Message] = value.compactMap { dictionary in
+                guard let content = dictionary["content"] as? String,
+                    let dateString = dictionary["date"] as? String,
+                    let date = self.iso8601DateFormatter.date(from: dateString),
+                    let messageID = dictionary["id"] as? String,
+                    let isRead = dictionary["is_read"] as? Bool,
+                    let name = dictionary["name"] as? String,
+                    let senderID = dictionary["sender_id"] as? String,
+                    let type = dictionary["type"] as? String
+                    else {
+                        return nil
+                }
+                
+                let sender = Sender(senderId: senderID, displayName: name, photoURL: "")
+                
+                let message = Message(sender: sender,
+                                      messageId: messageID,
+                                      sentDate: date,
+                                      kind: .text(content))
+                return message
+            }
+            
+            completion(.success(messages))
+        }
     }
     
     public func sendMessage(_ message: Message, toConversationID: String, completion: @escaping (Bool) -> Void) {

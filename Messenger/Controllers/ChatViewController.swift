@@ -21,6 +21,7 @@ struct Message: MessageType {
 }
 
 extension MessageKind: CustomStringConvertible {
+    
     public var description: String {
         switch self {
             case .text: return "text"
@@ -34,6 +35,8 @@ extension MessageKind: CustomStringConvertible {
             case .custom: return "custom"
         }
     }
+    
+    
 }
 
 struct Sender: SenderType {
@@ -41,12 +44,15 @@ struct Sender: SenderType {
     var senderId: String
     var displayName: String
     var photoURL: String
+    
+    
 }
 
 class ChatViewController: MessagesViewController {
     
     public var isNewConversation = false
     public let otherUserID: String
+    private let conversationID: String?
     
     private var messages = [Message]()
     private var currentUser = Sender(senderId: UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID)!,
@@ -54,9 +60,14 @@ class ChatViewController: MessagesViewController {
                                      photoURL: "")
     
 
-    init(userID: String) {
+    init(userID: String, conversationID: String?) {
         otherUserID = userID
+        self.conversationID = conversationID
         super.init(nibName: nil, bundle: nil)
+        
+        if let conversationID = self.conversationID {
+            startListeningForMessages(forConversationID: conversationID)
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -65,7 +76,7 @@ class ChatViewController: MessagesViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         view.backgroundColor = .systemBackground
         
         messagesCollectionView.messagesDataSource = self
@@ -76,8 +87,25 @@ class ChatViewController: MessagesViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
+
         messageInputBar.inputTextView.becomeFirstResponder()
+    }
+    
+    private func startListeningForMessages(forConversationID conversationID: String) {
+        DatabaseManager.shared.getAllMessages(forConversationID: conversationID) { [unowned self] (result) in
+            switch result {
+                case .success(let messages):
+                    guard !messages.isEmpty else { return }
+                
+                    self.messages = messages
+                
+                    DispatchQueue.main.async {
+                        self.messagesCollectionView.reloadDataAndKeepOffset()
+                    }
+                case .failure(let error):
+                    print("Failed to get messages: \(error)")
+            }
+        }
     }
     
 
