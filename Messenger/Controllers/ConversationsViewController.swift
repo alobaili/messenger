@@ -18,7 +18,7 @@ class ConversationsViewController: UIViewController {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.isHidden = true
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(ConversationTableViewCell.self, forCellReuseIdentifier: ConversationTableViewCell.reuseID)
         return tableView
     }()
     
@@ -32,6 +32,9 @@ class ConversationsViewController: UIViewController {
         label.isHidden = true
         return label
     }()
+    
+    private var conversations = [Conversation]()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,6 +50,8 @@ class ConversationsViewController: UIViewController {
         setupAutoLayout()
         
         fetchConversations()
+        
+        startListeningForConversations()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -66,10 +71,10 @@ class ConversationsViewController: UIViewController {
         present(navigationController, animated: true)
     }
     
-    private func createNewConversation(forUser user: Dictionary<String, [String : String]>.Element) {
+    private func createNewConversation(forUser user: Dictionary<String, [String : Any]>.Element) {
         guard
-            let firstName = user.value["first_name"],
-            let lastName = user.value["last_name"]
+            let firstName = user.value["first_name"] as? String,
+            let lastName = user.value["last_name"] as? String
             else {
             return
         }
@@ -107,6 +112,25 @@ class ConversationsViewController: UIViewController {
     private func fetchConversations() {
         tableView.isHidden = false
     }
+    
+    private func startListeningForConversations() {
+        guard let userID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else { return }
+        
+        DatabaseManager.shared.getAllConversations(forUserID: userID.safeForDatabaseReferenceChild()) { [unowned self] (result) in
+            switch result {
+                case .success(let conversations):
+                    guard !conversations.isEmpty else { return }
+                
+                    self.conversations = conversations
+                
+                    DispatchQueue.main.async {
+                        self.tableView.reloadData()
+                    }
+                case .failure(let error):
+                    print("Failed to get conversations: \(error)")
+            }
+        }
+    }
 
 
 }
@@ -115,12 +139,16 @@ class ConversationsViewController: UIViewController {
 extension ConversationsViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        1
+        conversations.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = "Hello World!"
+        let cell = tableView.dequeueReusableCell(withIdentifier: ConversationTableViewCell.reuseID, for: indexPath) as! ConversationTableViewCell
+        
+        
+        
+        cell.configure(with: conversations[indexPath.row])
+        
         return cell
     }
     
@@ -133,11 +161,16 @@ extension ConversationsViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        let conversation = conversations[indexPath.row]
         
-        let viewController = ChatViewController(userID: "")
-        viewController.title = "Max Pain"
+        let viewController = ChatViewController(userID: conversation.otherUserID)
+        viewController.title = conversation.name
         viewController.navigationItem.largeTitleDisplayMode = .never
         navigationController?.pushViewController(viewController, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        120
     }
     
     

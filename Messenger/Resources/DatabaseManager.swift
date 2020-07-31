@@ -57,16 +57,16 @@ extension DatabaseManager {
         }
     }
     
-    public func getAllUsers(completion: @escaping (Result<[Dictionary<String, [String : String]>.Element],Error>) -> Void) {
+    public func getAllUsers(completion: @escaping (Result<[Dictionary<String, [String : Any]>.Element],Error>) -> Void) {
         database.child("users").observeSingleEvent(of: .value) { (snapshot) in
-            guard let value = snapshot.value as? [String: [String: String]] else {
+            guard let value = snapshot.value as? [String: [String: Any]] else {
                 completion(.failure(DatabaseError.failedToFetch))
                 return
             }
             
             let users = value.sorted { (lhs, rhs) -> Bool in
-                let lhsFirstName = lhs.value["first_name"]!
-                let rhsFirstName = rhs.value["first_name"]!
+                let lhsFirstName = lhs.value["first_name"] as! String
+                let rhsFirstName = rhs.value["first_name"] as! String
                 return lhsFirstName < rhsFirstName
             }
             
@@ -208,8 +208,35 @@ extension DatabaseManager {
         }
     }
     
-    public func getAllConversations(forUserID userID: String, completion: @escaping (Result<String, Error>) -> Void) {
-        
+    public func getAllConversations(forUserID userID: String, completion: @escaping (Result<[Conversation], Error>) -> Void) {
+        database.child("users/\(userID.safeForDatabaseReferenceChild())/conversations").observe(.value) { (snapshot) in
+            guard let value = snapshot.value as? [[String: Any]] else {
+                completion(.failure(DatabaseError.failedToFetch))
+                return
+            }
+            
+            let conversations: [Conversation] = value.compactMap { dictionary in
+                guard let conversationID = dictionary["id"] as? String,
+                let name = dictionary["name"] as? String,
+                let otherUserID = dictionary["other_user_id"] as? String,
+                    let latestMessage = dictionary["latest_message"] as? [String: Any],
+                let date = latestMessage["date"] as? String,
+                let isRead = latestMessage["is_read"] as? Bool,
+                let massage = latestMessage["message"] as? String
+                    else {
+                        return nil
+                }
+                
+                let latestMessageObject = LatestMessage(date: date, isRead: isRead, message: massage)
+                let conversation = Conversation(id: conversationID,
+                                                name: name,
+                                                otherUserID: otherUserID,
+                                                latestMessage: latestMessageObject)
+                return conversation
+            }
+            
+            completion(.success(conversations))
+        }
     }
     
     public func getAllMessages(forConversationID conversationID: String, completion: @escaping (Result<String, Error>) -> Void) {

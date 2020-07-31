@@ -11,12 +11,12 @@ import JGProgressHUD
 
 class NewConversationViewController: UIViewController {
     
-    public var completion: ((Dictionary<String, [String: String]>.Element) -> Void)?
+    public var completion: ((Dictionary<String, [String: Any]>.Element) -> Void)?
     
     private let progressHUD = JGProgressHUD(style: .dark)
     
-    private var users = [Dictionary<String, [String: String]>.Element]()
-    private var results = [Dictionary<String, [String: String]>.Element]()
+    private var users = [Dictionary<String, [String: Any]>.Element]()
+    private var results = [Dictionary<String, [String: Any]>.Element]()
     private var hasFetched = false
     
     private lazy var searchController: UISearchController = {
@@ -158,7 +158,9 @@ extension NewConversationViewController: UISearchBarDelegate {
         progressHUD.dismiss()
         
         let results = users.filter { (user) -> Bool in
-            let name = "\(user.value["first_name"]!.lowercased()) \(user.value["last_name"]!.lowercased())"
+            let firstName = user.value["first_name"] as! String
+            let lastName = user.value["last_name"] as! String
+            let name = "\(firstName.lowercased()) \(lastName.lowercased())"
             
             return name.contains(term.lowercased())
         }
