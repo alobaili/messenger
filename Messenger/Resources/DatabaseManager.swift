@@ -80,7 +80,7 @@ extension DatabaseManager {
 
 extension DatabaseManager {
     
-    public func createNewConversation(withUserID userID: String, firstMessage: Message, completion: @escaping (Bool) -> Void) {
+    public func createNewConversation(withUserID userID: String, name: String, firstMessage: Message, completion: @escaping (Bool) -> Void) {
         guard let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
             return
         }
@@ -123,6 +123,7 @@ extension DatabaseManager {
             let newConversation: [String: Any] = [
                 "id": conversationID,
                 "other_user_id": userID.safeForDatabaseReferenceChild(),
+                "name": name,
                 "latest_message": [
                     "date": self.iso8601DateFormatter.string(from: firstMessage.sentDate),
                     "is_read": false,
@@ -149,13 +150,14 @@ extension DatabaseManager {
                 }
                 
                 self.finishCreatingConversation(withID: conversationID,
+                                                name: name,
                                                 firstMessage: firstMessage,
                                                 completion: completion)
             }
         }
     }
     
-    private func finishCreatingConversation(withID conversationID: String, firstMessage: Message, completion: @escaping (Bool) -> Void) {
+    private func finishCreatingConversation(withID conversationID: String, name: String, firstMessage: Message, completion: @escaping (Bool) -> Void) {
         
         var content = ""
         
@@ -188,7 +190,8 @@ extension DatabaseManager {
             "content": content,
             "date": iso8601DateFormatter.string(from: firstMessage.sentDate),
             "sender_id": senderID,
-            "is_read": false
+            "is_read": false,
+            "name": name
         ]
         
         let value: [String: Any] = [
