@@ -306,7 +306,64 @@ extension DatabaseManager {
         }
     }
     
-    public func sendMessage(_ message: Message, toConversationID: String, completion: @escaping (Bool) -> Void) {
+    public func sendMessage(_ message: Message, toConversationID conversationID: String, name: String, completion: @escaping (Bool) -> Void) {
+        // Add the new message to the messages array of the passed conversation ID
+        database.child("\(conversationID.safeForDatabaseReferenceChild())/messages").observeSingleEvent(of: .value) { [unowned self] (snapshot) in
+            guard var currentMessages = snapshot.value as? [[String: Any]] else {
+                completion(false)
+                return
+            }
+            
+            var content = ""
+            
+            switch message.kind {
+                case .text(let messageText):
+                    content = messageText
+                case .attributedText(_):
+                    break
+                case .photo(_):
+                    break
+                case .video(_):
+                    break
+                case .location(_):
+                    break
+                case .emoji(_):
+                    break
+                case .audio(_):
+                    break
+                case .contact(_):
+                    break
+                case .custom(_):
+                    break
+            }
+            
+            let senderID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID)!
+            
+            let message: [String: Any] = [
+                "id": message.messageId,
+                "type": message.kind.description,
+                "content": content,
+                "date": self.iso8601DateFormatter.string(from: message.sentDate),
+                "sender_id": senderID,
+                "is_read": false,
+                "name": name
+            ]
+            
+            currentMessages.append(message)
+            
+            self.database.child("\(conversationID.safeForDatabaseReferenceChild())/messages").setValue(currentMessages) { (error, _) in
+                if let error = error {
+                    print("Failed to updated messages array for conversation: \(conversationID.safeForDatabaseReferenceChild()): \(error)")
+                    completion(false)
+                    return
+                }
+                
+                completion(true)
+            }
+        }
+        // Update the sender's latest message
+        
+        // Update the recipient's latest message
         
     }
     
