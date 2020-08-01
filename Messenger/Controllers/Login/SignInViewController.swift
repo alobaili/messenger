@@ -154,7 +154,7 @@ class SignInViewController: UIViewController {
         
         progressHUD.show(in: view)
         
-        FirebaseAuth.Auth.auth().signIn(withEmail: email, password: password) { [unowned self] (result, error) in
+        Auth.auth().signIn(withEmail: email, password: password) { [unowned self] (result, error) in
             DispatchQueue.main.async {
                 self.progressHUD.dismiss()
             }
@@ -304,26 +304,28 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
                                                  lastName: appleIDCredential.fullName?.familyName)
                         DatabaseManager.shared.insertUser(user) { success in
                             if success {
-                                let changeRequest = authResult?.user.createProfileChangeRequest()
-                                changeRequest?.displayName = appleIDCredential.fullName?.givenName
-                                changeRequest?.commitChanges() { (error) in
-                                    if let error = error {
-                                        print("Error committing profile change request: \(error)")
-                                    } else {
-                                        guard let image = UIImage(systemName: "person.fill"), let data = image.pngData() else {
-                                            return
-                                        }
-                                        
-                                        let fileName = user.profileImageFileName
-                                        
-                                        StorageManager.shared.uploadProfileImage(with: data, fileName: fileName) { (result) in
-                                            switch result {
-                                                case .success(let url):
-                                                    print(url)
-                                                    UserDefaults.standard.set(url, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
-                                                    self.navigationController?.dismiss(animated: true)
-                                                case .failure(let error):
-                                                    print(error)
+                                if let firstName = appleIDCredential.fullName?.givenName, let lastName = appleIDCredential.fullName?.familyName {
+                                    let changeRequest = authResult?.user.createProfileChangeRequest()
+                                    changeRequest?.displayName = "\(firstName) \(lastName)"
+                                    changeRequest?.commitChanges() { (error) in
+                                        if let error = error {
+                                            print("Error committing profile change request: \(error)")
+                                        } else {
+                                            guard let image = UIImage(systemName: "person.fill"), let data = image.pngData() else {
+                                                return
+                                            }
+                                            
+                                            let fileName = user.profileImageFileName
+                                            
+                                            StorageManager.shared.uploadProfileImage(with: data, fileName: fileName) { (result) in
+                                                switch result {
+                                                    case .success(let url):
+                                                        print(url)
+                                                        UserDefaults.standard.set(url, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
+                                                        self.navigationController?.dismiss(animated: true)
+                                                    case .failure(let error):
+                                                        print(error)
+                                                }
                                             }
                                         }
                                     }

@@ -8,6 +8,7 @@
 
 import Foundation
 import FirebaseDatabase
+import FirebaseAuth
 import MessageKit
 
 final class DatabaseManager {
@@ -136,7 +137,7 @@ extension DatabaseManager {
             let recipientNewConversation: [String: Any] = [
                 "id": conversationID,
                 "other_user_id": safeCurrentUserID,
-                "name": "Self",
+                "name": Auth.auth().currentUser!.displayName!,
                 "latest_message": [
                     "date": self.iso8601DateFormatter.string(from: firstMessage.sentDate),
                     "is_read": false,

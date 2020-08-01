@@ -194,7 +194,10 @@ class RegisterViewController: UIViewController {
                 return
             }
             
-            FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password) { (result, error) in
+            FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password) { (authenticationResult, error) in
+                
+                UserDefaults.standard.set(email, forKey: UserDefaults.MessengerKeys.kUserID)
+                
                 if let error = error {
                     print("Error creating user: \(error)")
                     return
@@ -204,22 +207,30 @@ class RegisterViewController: UIViewController {
                 
                 DatabaseManager.shared.insertUser(user) { success in
                     if success {
-                        guard let image = self.imageView.image, let data = image.pngData() else {
-                            return
-                        }
-                        
-                        let fileName = user.profileImageFileName
-                        
-                        StorageManager.shared.uploadProfileImage(with: data, fileName: fileName) { (result) in
-                            switch result {
-                                case .success(let url):
-                                    print(url)
-                                    UserDefaults.standard.set(url, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
-                                self.navigationController?.dismiss(animated: true)
-                                case .failure(let error):
-                                    print(error)
+                        let changeRequest = authenticationResult?.user.createProfileChangeRequest()
+                        changeRequest?.displayName = "\(firstName) \(lastName)"
+                        changeRequest?.commitChanges(completion: { (error) in
+                            if let error = error {
+                                print("Error committing profile change request: \(error)")
+                            } else {
+                                guard let image = self.imageView.image, let data = image.pngData() else {
+                                    return
+                                }
+                                
+                                let fileName = user.profileImageFileName
+                                
+                                StorageManager.shared.uploadProfileImage(with: data, fileName: fileName) { (result) in
+                                    switch result {
+                                        case .success(let url):
+                                            print(url)
+                                            UserDefaults.standard.set(url, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
+                                            self.navigationController?.dismiss(animated: true)
+                                        case .failure(let error):
+                                            print(error)
+                                    }
+                                }
                             }
-                        }
+                        })
                     }
                 }
             }

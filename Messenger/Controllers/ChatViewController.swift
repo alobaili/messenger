@@ -9,6 +9,7 @@
 import UIKit
 import MessageKit
 import InputBarAccessoryView
+import FirebaseAuth
 
 struct Message: MessageType {
     
