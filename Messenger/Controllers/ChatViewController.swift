@@ -93,7 +93,8 @@ class ChatViewController: MessagesViewController {
     }
     
     private func startListeningForMessages(forConversationID conversationID: String) {
-        DatabaseManager.shared.getAllMessages(forConversationID: conversationID) { [unowned self] (result) in
+        DatabaseManager.shared.getAllMessages(forConversationID: conversationID) { [weak self] (result) in
+            guard let self = self else { return }
             switch result {
                 case .success(let messages):
                     guard !messages.isEmpty else { return }
@@ -153,7 +154,7 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
         } else {
             guard let conversationID = conversationID, let name = Auth.auth().currentUser?.displayName else { return }
             // Append to the existing conversation
-            DatabaseManager.shared.sendMessage(message, toConversationID: conversationID, name: name) { (success) in
+            DatabaseManager.shared.sendMessage(message, recipientID: otherUserID, conversationID: conversationID, name: name) { (success) in
                 if success {
                     print("message sent")
                     inputBar.inputTextView.text = nil
