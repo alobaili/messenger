@@ -288,17 +288,32 @@ extension DatabaseManager {
                     let isRead = dictionary["is_read"] as? Bool,
                     let name = dictionary["name"] as? String,
                     let senderID = dictionary["sender_id"] as? String,
-                    let type = dictionary["type"] as? String
+                    let typeString = dictionary["type"] as? String
                     else {
                         return nil
                 }
                 
                 let sender = Sender(senderId: senderID, displayName: name, photoURL: "")
                 
+                var kind: MessageKind?
+                
+                switch typeString {
+                    case "text": kind = .text(content)
+                    case "photo":
+                        let media = Media(url: URL(string: content),
+                                          image: nil,
+                                          placeholderImage: UIImage(systemName: "plus")!,
+                                          size: CGSize(width: 300, height: 300))
+                        kind = .photo(media)
+                    default: break
+                }
+                
+                guard let finalKind = kind else { return nil }
+                
                 let message = Message(sender: sender,
                                       messageId: messageID,
                                       sentDate: date,
-                                      kind: .text(content))
+                                      kind: finalKind)
                 return message
             }
             
@@ -306,7 +321,7 @@ extension DatabaseManager {
         }
     }
     
-    public func sendMessage(_ message: Message, recipientID: String, conversationID: String, name: String, completion: @escaping (Bool) -> Void) {
+    public func sendMessage(_ message: Message, recipientID: String, conversationID: String, senderName: String, completion: @escaping (Bool) -> Void) {
         guard let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
             completion(false)
             return
@@ -326,8 +341,10 @@ extension DatabaseManager {
                     content = messageText
                 case .attributedText(_):
                     break
-                case .photo(_):
-                    break
+                case .photo(let media):
+                    if let urlString = media.url?.absoluteString {
+                        content = urlString
+                    }
                 case .video(_):
                     break
                 case .location(_):
@@ -351,7 +368,7 @@ extension DatabaseManager {
                 "date": self.iso8601DateFormatter.string(from: message.sentDate),
                 "sender_id": senderID,
                 "is_read": false,
-                "name": name
+                "name": senderName
             ]
             
             currentMessages.append(newMessage)
