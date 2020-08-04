@@ -69,15 +69,11 @@ class SignInViewController: UIViewController {
         button.tintColor = .white
         button.backgroundColor = .link
         button.layer.cornerRadius = 12
-        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 20)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 17)
         return button
     }()
     
-    private let signInWithAppleButton: ASAuthorizationAppleIDButton = {
-        let button = ASAuthorizationAppleIDButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
+    private var signInWithAppleButton: ASAuthorizationAppleIDButton!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -89,7 +85,7 @@ class SignInViewController: UIViewController {
                                                             target: self,
                                                             action: #selector(didTapRegister))
         loginButton.addTarget(self, action: #selector(signInButtonTapped), for: .touchUpInside)
-        signInWithAppleButton.addTarget(self, action: #selector(signInWithAppleButtonTapped), for: .touchUpInside)
+        
         emailTextField.delegate = self
         passwordTextField.delegate = self
         
@@ -99,7 +95,6 @@ class SignInViewController: UIViewController {
         contentView.addSubview(emailTextField)
         contentView.addSubview(passwordTextField)
         contentView.addSubview(loginButton)
-        contentView.addSubview(signInWithAppleButton)
         
         NSLayoutConstraint.activate([
             scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -129,14 +124,39 @@ class SignInViewController: UIViewController {
             loginButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
             loginButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -30),
             loginButton.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 20),
-            loginButton.heightAnchor.constraint(equalToConstant: 44),
-            
+            loginButton.heightAnchor.constraint(equalToConstant: 44)
+        ])
+        
+        recreateSignInWithAppleButton(for: traitCollection.userInterfaceStyle)
+    }
+    
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        
+        recreateSignInWithAppleButton(for: traitCollection.userInterfaceStyle)
+    }
+    
+    func recreateSignInWithAppleButton(for style: UIUserInterfaceStyle) {
+        switch style {
+            case .light:
+                signInWithAppleButton = ASAuthorizationAppleIDButton(authorizationButtonType: .signIn, authorizationButtonStyle: .black)
+            default:
+                signInWithAppleButton = ASAuthorizationAppleIDButton(authorizationButtonType: .signIn, authorizationButtonStyle: .white)
+        }
+        signInWithAppleButton.translatesAutoresizingMaskIntoConstraints = false
+        signInWithAppleButton.cornerRadius = 12
+        
+        contentView.addSubview(signInWithAppleButton)
+        
+        NSLayoutConstraint.activate([
             signInWithAppleButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
             signInWithAppleButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -30),
             signInWithAppleButton.topAnchor.constraint(equalTo: loginButton.bottomAnchor, constant: 20),
             signInWithAppleButton.heightAnchor.constraint(equalToConstant: 44),
             signInWithAppleButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30)
         ])
+        
+        signInWithAppleButton.addTarget(self, action: #selector(signInWithAppleButtonTapped), for: .touchUpInside)
     }
     
     @objc private func signInButtonTapped() {
