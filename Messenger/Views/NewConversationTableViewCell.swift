@@ -1,17 +1,17 @@
 //
-//  ConversationTableViewCell.swift
+//  NewConversationTableViewCell.swift
 //  Messenger
 //
-//  Created by Abdulaziz AlObaili on 31/07/2020.
+//  Created by Abdulaziz AlObaili on 04/08/2020.
 //  Copyright © 2020 Abdulaziz AlObaili. All rights reserved.
 //
 
 import UIKit
 import SDWebImage
 
-class ConversationTableViewCell: UITableViewCell {
+class NewConversationTableViewCell: UITableViewCell {
     
-    static let reuseID = "ConversationTableViewCell"
+    static let reuseID = "NewConversationTableViewCell"
     
     private let userImageView: UIImageView = {
         let imageView = UIImageView()
@@ -30,22 +30,13 @@ class ConversationTableViewCell: UITableViewCell {
         return label
     }()
     
-    private let userMessageLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 19, weight: .regular)
-        label.numberOfLines = 0
-        return label
-    }()
     
-
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
         accessoryType = .disclosureIndicator
         contentView.addSubview(userImageView)
         contentView.addSubview(usernameLabel)
-        contentView.addSubview(userMessageLabel)
     }
     
     required init?(coder: NSCoder) {
@@ -65,26 +56,21 @@ class ConversationTableViewCell: UITableViewCell {
             usernameLabel.leadingAnchor.constraint(equalTo: userImageView.trailingAnchor, constant: 10),
             usernameLabel.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor),
             usernameLabel.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-            
-            userMessageLabel.leadingAnchor.constraint(equalTo: userImageView.trailingAnchor, constant: 10),
-            userMessageLabel.topAnchor.constraint(equalTo: usernameLabel.bottomAnchor, constant: 10),
-            userMessageLabel.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-            userMessageLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.layoutMarginsGuide.bottomAnchor)
+            usernameLabel.bottomAnchor.constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor)
         ])
     }
     
-    func configure(with conversation: Conversation) {
-        userMessageLabel.text = conversation.latestMessage.message
-        usernameLabel.text = conversation.name
+    func configure(with user: MessengerUser) {
+        usernameLabel.text = "\(user.firstName ?? "") \(user.lastName ?? "")"
         
-        let path = "images/\(conversation.otherUserID.safeForDatabaseReferenceChild())_profile_image.png"
+        let path = "images/\(user.id.safeForDatabaseReferenceChild())_profile_image.png"
         
         StorageManager.shared.getDownloadURL(for: path) { [unowned self] (result) in
             switch result {
                 case .success(let url):
                     DispatchQueue.main.async {
                         self.userImageView.sd_setImage(with: url)
-                    }
+                }
                 case .failure(let error):
                     print("Failed to get download URL: \(error)")
             }

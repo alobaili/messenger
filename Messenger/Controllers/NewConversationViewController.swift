@@ -32,8 +32,10 @@ class NewConversationViewController: UIViewController {
     private let tableView: UITableView = {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(NewConversationTableViewCell.self, forCellReuseIdentifier: NewConversationTableViewCell.reuseID)
         tableView.isHidden = true
+        tableView.rowHeight = 75 + 12
+        tableView.separatorInset.left = 100
         return tableView
     }()
     
@@ -98,10 +100,9 @@ extension NewConversationViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let firstName = results[indexPath.row].firstName ?? ""
-        let lastName = results[indexPath.row].lastName ?? ""
-        cell.textLabel?.text = "\(firstName) \(lastName)"
+        let cell = tableView.dequeueReusableCell(withIdentifier: NewConversationTableViewCell.reuseID, for: indexPath) as! NewConversationTableViewCell
+        let user = results[indexPath.row]
+        cell.configure(with: user)
         return cell
     }
     

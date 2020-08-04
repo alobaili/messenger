@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4B00F8F924D9B3E100681354 /* NewConversationTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B00F8F824D9B3E100681354 /* NewConversationTableViewCell.swift */; };
 		4B0F5D0C24C76B05008ADC0C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0F5D0B24C76B05008ADC0C /* AppDelegate.swift */; };
 		4B0F5D0E24C76B05008ADC0C /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0F5D0D24C76B05008ADC0C /* SceneDelegate.swift */; };
 		4B0F5D1024C76B05008ADC0C /* ConversationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0F5D0F24C76B05008ADC0C /* ConversationsViewController.swift */; };
@@ -33,6 +34,7 @@
 
 /* Begin PBXFileReference section */
 		032B99C0BB140BB614C6E65B /* Pods-Messenger.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Messenger.debug.xcconfig"; path = "Target Support Files/Pods-Messenger/Pods-Messenger.debug.xcconfig"; sourceTree = "<group>"; };
+		4B00F8F824D9B3E100681354 /* NewConversationTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewConversationTableViewCell.swift; sourceTree = "<group>"; };
 		4B0F5D0824C76B05008ADC0C /* Messenger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Messenger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B0F5D0B24C76B05008ADC0C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4B0F5D0D24C76B05008ADC0C /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 				4B0F5D2424C76C08008ADC0C /* Storyboards */,
 				4B0F5D1424C76B07008ADC0C /* Assets.xcassets */,
 				4BE2600024D483F9007E0118 /* ConversationTableViewCell.swift */,
+				4B00F8F824D9B3E100681354 /* NewConversationTableViewCell.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -315,6 +318,7 @@
 				4BB1C16E24C9D97700983920 /* DatabaseManager.swift in Sources */,
 				4B893A8124C76ECF00BB69D4 /* NewConversationViewController.swift in Sources */,
 				4B0F5D1024C76B05008ADC0C /* ConversationsViewController.swift in Sources */,
+				4B00F8F924D9B3E100681354 /* NewConversationTableViewCell.swift in Sources */,
 				4B893A7F24C76E9C00BB69D4 /* VideoPlayerViewController.swift in Sources */,
 				4B0F5D0C24C76B05008ADC0C /* AppDelegate.swift in Sources */,
 				4B2C7B6624CB6EE200539653 /* Constants.swift in Sources */,

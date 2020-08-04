@@ -80,7 +80,6 @@ final class StorageManager {
                 return
             }
             
-            print("Download URL returned: \(url!)")
             completion(.success(url!))
         }
     }

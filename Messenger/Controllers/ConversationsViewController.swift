@@ -18,6 +18,8 @@ class ConversationsViewController: UIViewController {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.isHidden = true
+        tableView.separatorInset.left = 100
+        tableView.rowHeight = 75 + 12
         tableView.register(ConversationTableViewCell.self, forCellReuseIdentifier: ConversationTableViewCell.reuseID)
         return tableView
     }()
@@ -167,10 +169,6 @@ extension ConversationsViewController: UITableViewDelegate {
         viewController.title = conversation.name
         viewController.navigationItem.largeTitleDisplayMode = .never
         navigationController?.pushViewController(viewController, animated: true)
-    }
-    
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        120
     }
     
     
