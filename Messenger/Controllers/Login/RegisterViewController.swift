@@ -203,7 +203,7 @@ class RegisterViewController: UIViewController {
                     return
                 }
                 
-                let user = MessengerUser(id: email, firstName: firstName, lastName: lastName)
+                let user = MessengerUser(id: email, firstName: firstName, lastName: lastName, conversations: nil)
                 
                 DatabaseManager.shared.insertUser(user) { success in
                     if success {

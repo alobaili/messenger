@@ -71,14 +71,14 @@ class ConversationsViewController: UIViewController {
         present(navigationController, animated: true)
     }
     
-    private func createNewConversation(forUser user: Dictionary<String, [String : Any]>.Element) {
+    private func createNewConversation(forUser user: MessengerUser) {
         guard
-            let firstName = user.value["first_name"] as? String,
-            let lastName = user.value["last_name"] as? String
+            let firstName = user.firstName,
+            let lastName = user.lastName
             else {
             return
         }
-        let viewController = ChatViewController(userID: user.key, conversationID: nil)
+        let viewController = ChatViewController(userID: user.id, conversationID: nil)
         viewController.isNewConversation = true
         viewController.title = "\(firstName) \(lastName)"
         viewController.navigationItem.largeTitleDisplayMode = .never

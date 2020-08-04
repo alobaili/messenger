@@ -11,12 +11,12 @@ import JGProgressHUD
 
 class NewConversationViewController: UIViewController {
     
-    public var completion: ((Dictionary<String, [String: Any]>.Element) -> Void)?
+    public var completion: ((MessengerUser) -> Void)?
     
     private let progressHUD = JGProgressHUD(style: .dark)
     
-    private var users = [Dictionary<String, [String: Any]>.Element]()
-    private var results = [Dictionary<String, [String: Any]>.Element]()
+    private var users = [MessengerUser]()
+    private var results = [MessengerUser]()
     private var hasFetched = false
     
     private lazy var searchController: UISearchController = {
@@ -99,8 +99,8 @@ extension NewConversationViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let firstName = results[indexPath.row].value["first_name"]!
-        let lastName = results[indexPath.row].value["last_name"]!
+        let firstName = results[indexPath.row].firstName ?? ""
+        let lastName = results[indexPath.row].lastName ?? ""
         cell.textLabel?.text = "\(firstName) \(lastName)"
         return cell
     }
@@ -158,8 +158,8 @@ extension NewConversationViewController: UISearchBarDelegate {
         progressHUD.dismiss()
         
         let results = users.filter { (user) -> Bool in
-            let firstName = user.value["first_name"] as! String
-            let lastName = user.value["last_name"] as! String
+            let firstName = user.firstName ?? ""
+            let lastName = user.lastName ?? ""
             let name = "\(firstName.lowercased()) \(lastName.lowercased())"
             
             return name.contains(term.lowercased())

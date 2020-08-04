@@ -301,7 +301,8 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
                     if !exists {
                         let user = MessengerUser(id: appleIDCredential.user,
                                                  firstName: appleIDCredential.fullName?.givenName,
-                                                 lastName: appleIDCredential.fullName?.familyName)
+                                                 lastName: appleIDCredential.fullName?.familyName,
+                                                 conversations: nil)
                         DatabaseManager.shared.insertUser(user) { success in
                             if success {
                                 if let firstName = appleIDCredential.fullName?.givenName, let lastName = appleIDCredential.fullName?.familyName {

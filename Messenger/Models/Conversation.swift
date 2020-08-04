@@ -6,16 +6,20 @@
 //  Copyright © 2020 Abdulaziz AlObaili. All rights reserved.
 //
 
-struct Conversation {
+struct Conversation: Codable {
     
     let id: String
     var name: String
     var otherUserID: String
     var latestMessage: LatestMessage
     
+    enum CodingKeys: String, CodingKey {
+        case id, name, latestMessage
+        case otherUserID = "otherUserId"
+    }
 }
 
-struct LatestMessage {
+struct LatestMessage: Codable {
     
     var date: String
     var isRead: Bool

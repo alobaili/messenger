@@ -22,10 +22,12 @@ final class DatabaseManager {
     let iso8601DateFormatter = ISO8601DateFormatter()
     
     let encoder = JSONEncoder()
+    let decoder = JSONDecoder()
     
     
     private init() {
         encoder.keyEncodingStrategy = .convertToSnakeCase
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
     }
     
     
@@ -59,26 +61,39 @@ extension DatabaseManager {
         }
     }
     
-    public func getAllUsers(completion: @escaping (Result<[Dictionary<String, [String : Any]>.Element],Error>) -> Void) {
+    public func getAllUsers(completion: @escaping (Result<[MessengerUser],Error>) -> Void) {
         database.child("users").observeSingleEvent(of: .value) { (snapshot) in
             guard let value = snapshot.value as? [String: [String: Any]] else {
                 completion(.failure(DatabaseError.failedToFetch))
                 return
             }
             
-            var users = value.sorted { (lhs, rhs) -> Bool in
-                let lhsFirstName = lhs.value["first_name"] as! String
-                let rhsFirstName = rhs.value["first_name"] as! String
-                return lhsFirstName < rhsFirstName
+            do {
+                let usersData = try JSONSerialization.data(withJSONObject: value, options: .fragmentsAllowed)
+                print(String(data: usersData, encoding: .utf8)!)
+                var messengerUserArray = try self.decoder.decode(MessengerUserArray.self, from: usersData)
+                
+                let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID)?.safeForDatabaseReferenceChild()
+                
+                messengerUserArray.messengerUsers.removeAll { $0.id == currentUserID }
+                
+                let sortedUsers = messengerUserArray.messengerUsers.sorted(by: { (lhs, rhs) -> Bool in
+                    if let lFirstName = lhs.firstName, let rFirstName = rhs.firstName {
+                        return lFirstName < rFirstName
+                    } else if let lLastName = lhs.lastName, let rLastName = rhs.lastName {
+                        return lLastName < rLastName
+                    } else {
+                        return lhs.id < rhs.id
+                    }
+                })
+                
+                completion(.success(sortedUsers))
+            } catch {
+                print("Failed to decode users: \(error)")
             }
-            
-            let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID)?.safeForDatabaseReferenceChild()
-            
-            users.removeAll { $0.key == currentUserID }
-            
-            completion(.success(users))
         }
     }
+    
     
 }
 
