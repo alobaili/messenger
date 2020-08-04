@@ -66,11 +66,15 @@ extension DatabaseManager {
                 return
             }
             
-            let users = value.sorted { (lhs, rhs) -> Bool in
+            var users = value.sorted { (lhs, rhs) -> Bool in
                 let lhsFirstName = lhs.value["first_name"] as! String
                 let rhsFirstName = rhs.value["first_name"] as! String
                 return lhsFirstName < rhsFirstName
             }
+            
+            let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID)?.safeForDatabaseReferenceChild()
+            
+            users.removeAll { $0.key == currentUserID }
             
             completion(.success(users))
         }
