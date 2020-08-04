@@ -11,6 +11,8 @@ import MessageKit
 import InputBarAccessoryView
 import FirebaseAuth
 import SDWebImage
+import CoreServices
+import AVKit
 
 struct Message: MessageType {
     
@@ -130,6 +132,8 @@ class ChatViewController: MessagesViewController {
             
             let picker = UIImagePickerController()
             picker.sourceType = .camera
+            picker.mediaTypes = [kUTTypeImage as String, kUTTypeMovie as String]
+            picker.videoQuality = .typeMedium
             picker.delegate = self
             self.present(picker, animated: true)
         }))
@@ -139,6 +143,8 @@ class ChatViewController: MessagesViewController {
             
             let picker = UIImagePickerController()
             picker.sourceType = .photoLibrary
+            picker.mediaTypes = [kUTTypeImage as String, kUTTypeMovie as String]
+            picker.videoQuality = .typeMedium
             picker.delegate = self
             self.present(picker, animated: true)
         }))
@@ -221,6 +227,13 @@ extension ChatViewController: MessageCellDelegate {
                 let viewController = PhotoViewerViewController(with: imageURL)
                 viewController.hidesBottomBarWhenPushed = true
                 self.navigationController?.pushViewController(viewController, animated: true)
+            case .video(let media):
+                guard let videoURL = media.url else { return }
+                let viewController = AVPlayerViewController()
+                viewController.player = AVPlayer(url: videoURL)
+                self.present(viewController, animated: true) {
+                    viewController.player?.play()
+                }
             default:
                 break
         }
@@ -283,43 +296,82 @@ extension ChatViewController: UIImagePickerControllerDelegate, UINavigationContr
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)
         
-        guard let image = info[.originalImage] as? UIImage,
-            let imageData = image.pngData(),
-            let conversationID = conversationID,
+        guard let conversationID = conversationID,
             let senderName = Auth.auth().currentUser?.displayName
             else { return }
         
         // use this id for the message and the name of the image
         let id = createUniqueID()
         
-        // Upload the image
-        let fileName = "message_image_\(id).png"
-        StorageManager.shared.uploadMessageImage(with: imageData, fileName: fileName) { [weak self] (result) in
-            guard let self = self else { return }
-            
-            switch result {
-                case .success(let url):
-                    print("Successfully uploaded image: \(url.absoluteString)")
-                    
-                    let placeholderImage = UIImage(systemName: "plus")!
-                    
-                    let image = Media(url: url, image: nil, placeholderImage: placeholderImage, size: .zero)
-                    
-                    let message = Message(sender: self.currentUser, messageId: id, sentDate: Date(), kind: .photo(image))
-                    
-                    DatabaseManager.shared.sendMessage(message, recipientID: self.otherUserID, conversationID: conversationID, senderName: senderName) { (success) in
-                        if success {
-                            print("Sent image message")
-                        } else {
-                            print("Failed to send image message")
-                        }
+        if let image = info[.originalImage] as? UIImage, let imageData = image.pngData() {
+            // Upload the image
+            let fileName = "message_image_\(id).png"
+            StorageManager.shared.uploadMessageImage(with: imageData, fileName: fileName) { [weak self] (result) in
+                guard let self = self else { return }
+                
+                switch result {
+                    case .success(let url):
+                        print("Successfully uploaded image: \(url.absoluteString)")
+                        
+                        let placeholderImage = UIImage(systemName: "plus")!
+                        
+                        let image = Media(url: url, image: nil, placeholderImage: placeholderImage, size: .zero)
+                        
+                        let message = Message(sender: self.currentUser, messageId: id, sentDate: Date(), kind: .photo(image))
+                        
+                        // Send the message
+                        DatabaseManager.shared.sendMessage(message, recipientID: self.otherUserID, conversationID: conversationID, senderName: senderName) { (success) in
+                            if success {
+                                print("Sent image message")
+                            } else {
+                                print("Failed to send image message")
+                            }
+                    }
+                    case .failure(let error):
+                        print("Failed to upload message image: \(error)")
                 }
-                case .failure(let error):
-                    print("Failed to upload message image: \(error)")
+            }
+        } else if let videoURL = info[.mediaURL] as? URL {
+            // Upload the video
+            let fileName = "message_video_\(id).mov"
+            
+            let temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+            
+            // I had to copy the video from the sandboxed URL to a temporary directory
+            // because of iOS 13 issuing this error: "Failed to issue sandbox extension for file"
+            // See: https://stackoverflow.com/a/57973541/10654098
+            do {
+                try FileManager.default.copyItem(at: videoURL, to: temporaryDirectory)
+            } catch {
+                fatalError("Failed to move item to temporary directory: \(error)")
+            }
+            
+            StorageManager.shared.uploadMessageVideo(with: temporaryDirectory, fileName: fileName) { [weak self] (result) in
+                guard let self = self else { return }
+                
+                switch result {
+                    case .success(let url):
+                        print("Successfully uploaded video: \(url.absoluteString)")
+                        
+                        let placeholderImage = UIImage(systemName: "plus")!
+                        
+                        let image = Media(url: url, image: nil, placeholderImage: placeholderImage, size: .zero)
+                        
+                        let message = Message(sender: self.currentUser, messageId: id, sentDate: Date(), kind: .video(image))
+                        
+                        // Send the message
+                        DatabaseManager.shared.sendMessage(message, recipientID: self.otherUserID, conversationID: conversationID, senderName: senderName) { (success) in
+                            if success {
+                                print("Sent image message")
+                            } else {
+                                print("Failed to send image message")
+                            }
+                    }
+                    case .failure(let error):
+                        print("Failed to upload message image: \(error)")
+                }
             }
         }
-        
-        // Send the message
     }
     
     

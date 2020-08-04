@@ -305,6 +305,12 @@ extension DatabaseManager {
                                           placeholderImage: UIImage(systemName: "plus")!,
                                           size: CGSize(width: 300, height: 300))
                         kind = .photo(media)
+                    case "video":
+                        let media = Media(url: URL(string: content),
+                                          image: nil,
+                                          placeholderImage: UIImage(systemName: "play.rectangle.fill")!,
+                                          size: CGSize(width: 300, height: 300))
+                        kind = .video(media)
                     default: break
                 }
                 
@@ -345,8 +351,10 @@ extension DatabaseManager {
                     if let urlString = media.url?.absoluteString {
                         content = urlString
                     }
-                case .video(_):
-                    break
+                case .video(let media):
+                    if let urlString = media.url?.absoluteString {
+                        content = urlString
+                    }
                 case .location(_):
                     break
                 case .emoji(_):
