@@ -77,6 +77,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4B00F90F24DA253F00681354 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				4B2C7B6324C9FD6F00539653 /* String+.swift */,
+				4B2C7B6524CB6EE200539653 /* UserDefaults+.swift */,
+				4B00F90D24DA24CA00681354 /* NotificationName+.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
 		4B0F5CFF24C76B05008ADC0C = {
 			isa = PBXGroup;
 			children = (
@@ -154,13 +164,11 @@
 		4B0F5D2324C76BBE008ADC0C /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				4B00F90F24DA253F00681354 /* Extensions */,
 				4B0F5D0B24C76B05008ADC0C /* AppDelegate.swift */,
 				4B0F5D0D24C76B05008ADC0C /* SceneDelegate.swift */,
 				4BB1C16D24C9D97700983920 /* DatabaseManager.swift */,
-				4B2C7B6324C9FD6F00539653 /* String+.swift */,
-				4B2C7B6524CB6EE200539653 /* UserDefaults+.swift */,
 				4B4DAC2A24CDFB4600DBD947 /* StorageManager.swift */,
-				4B00F90D24DA24CA00681354 /* NotificationName+.swift */,
 			);
 			path = Resources;
 			sourceTree = "<group>";

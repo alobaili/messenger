@@ -37,6 +37,7 @@ class ConversationsViewController: UIViewController {
     
     private var conversations = [Conversation]()
     
+    private var signInObserver: NSObjectProtocol?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -54,6 +55,16 @@ class ConversationsViewController: UIViewController {
         fetchConversations()
         
         startListeningForConversations()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        signInObserver = NotificationCenter.default.addObserver(forName: .didSignIn, object: nil, queue: .main, using: { [weak self] (_) in
+            guard let self = self else { return }
+            
+            self.startListeningForConversations()
+        })
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -117,6 +128,10 @@ class ConversationsViewController: UIViewController {
     
     private func startListeningForConversations() {
         guard let userID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else { return }
+        
+        if let observer = signInObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
         
         DatabaseManager.shared.getAllConversations(forUserID: userID.safeForDatabaseReferenceChild()) { [unowned self] (result) in
             switch result {

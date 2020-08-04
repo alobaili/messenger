@@ -74,6 +74,8 @@ class SignInViewController: UIViewController {
     }()
     
     private var signInWithAppleButton: ASAuthorizationAppleIDButton!
+    
+    private var signInObserver: NSObjectProtocol?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -188,6 +190,8 @@ class SignInViewController: UIViewController {
             print("Sign in successful for user: \(user)")
             
             UserDefaults.standard.set(email, forKey: UserDefaults.MessengerKeys.kUserID)
+            
+            NotificationCenter.default.post(name: .didSignIn, object: nil)
             
             self.navigationController?.dismiss(animated: true)
         }
@@ -343,6 +347,9 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
                                                     case .success(let url):
                                                         print(url)
                                                         UserDefaults.standard.set(url, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
+                                                        
+                                                        NotificationCenter.default.post(name: .didSignIn, object: nil)
+                                                        
                                                         self.navigationController?.dismiss(animated: true)
                                                     case .failure(let error):
                                                         print(error)
@@ -356,6 +363,8 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
                         
                         
                     } else {
+                        NotificationCenter.default.post(name: .didSignIn, object: nil)
+                        
                         self.navigationController?.dismiss(animated: true)
                     }
                 }

@@ -17,6 +17,8 @@ class ProfileViewController: UIViewController {
     enum Option: String, CaseIterable {
         case signOut = "Sign Out"
     }
+    
+    private var signInObserver: NSObjectProtocol?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,6 +36,12 @@ class ProfileViewController: UIViewController {
                                                selector: #selector(appleIDCredentialRevoked),
                                                name: ASAuthorizationAppleIDProvider.credentialRevokedNotification,
                                                object: nil)
+        
+        signInObserver = NotificationCenter.default.addObserver(forName: .didSignIn, object: nil, queue: .main) { [weak self] (_) in
+            guard let self = self else { return }
+            
+            self.tableView.tableHeaderView = self.createTableHeaderView()
+        }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -74,6 +82,10 @@ class ProfileViewController: UIViewController {
     func createTableHeaderView() -> UIView? {
         guard let id = UserDefaults.standard.value(forKey: UserDefaults.MessengerKeys.kUserID) as? String else {
             return nil
+        }
+        
+        if let observer = signInObserver {
+            NotificationCenter.default.removeObserver(observer)
         }
         
         let safeID = id.safeForDatabaseReferenceChild()
