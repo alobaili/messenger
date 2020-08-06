@@ -270,12 +270,12 @@ extension DatabaseManager {
             
             let conversations: [Conversation] = value.compactMap { dictionary in
                 guard let conversationID = dictionary["id"] as? String,
-                let name = dictionary["name"] as? String,
-                let otherUserID = dictionary["other_user_id"] as? String,
+                    let name = dictionary["name"] as? String,
+                    let otherUserID = dictionary["other_user_id"] as? String,
                     let latestMessage = dictionary["latest_message"] as? [String: Any],
-                let date = latestMessage["date"] as? String,
-                let isRead = latestMessage["is_read"] as? Bool,
-                let massage = latestMessage["message"] as? String
+                    let date = latestMessage["date"] as? String,
+                    let isRead = latestMessage["is_read"] as? Bool,
+                    let massage = latestMessage["message"] as? String
                     else {
                         return nil
                 }
@@ -459,6 +459,26 @@ extension DatabaseManager {
                         }
                     }
                 }
+            }
+        }
+    }
+    
+    public func deleteConversation(_ conversation: Conversation) {
+        guard let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
+            return
+        }
+        
+        let reference = database.child("users/\(currentUserID.safeForDatabaseReferenceChild())/conversations")
+        
+        reference.observeSingleEvent(of: .value) { (snapshot) in
+            guard var conversations = snapshot.value as? [[String: Any]] else {
+                return
+            }
+            
+            if let indexToRemove = conversations.firstIndex(where: { ($0["id"] as! String) == conversation.id }) {
+                conversations.remove(at: indexToRemove)
+                
+                reference.setValue(conversations)
             }
         }
     }

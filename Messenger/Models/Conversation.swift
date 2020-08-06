@@ -6,7 +6,10 @@
 //  Copyright © 2020 Abdulaziz AlObaili. All rights reserved.
 //
 
-struct Conversation: Codable {
+struct Conversation: Codable, Hashable {
+    static func == (lhs: Conversation, rhs: Conversation) -> Bool {
+        lhs.id == rhs.id
+    }
     
     let id: String
     var name: String
@@ -17,9 +20,10 @@ struct Conversation: Codable {
         case id, name, latestMessage
         case otherUserID = "otherUserId"
     }
+    
 }
 
-struct LatestMessage: Codable {
+struct LatestMessage: Codable, Hashable {
     
     var date: String
     var isRead: Bool

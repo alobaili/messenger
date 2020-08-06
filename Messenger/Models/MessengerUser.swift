@@ -31,7 +31,7 @@ struct MessengerUser: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         firstName = try container.decode(String.self, forKey: .firstName)
         lastName = try container.decode(String.self, forKey: .lastName)
-        conversations = try container.decode([Conversation].self, forKey: .conversations)
+        conversations = try container.decodeIfPresent([Conversation].self, forKey: .conversations)
         
         id = container.codingPath.first!.stringValue
     }

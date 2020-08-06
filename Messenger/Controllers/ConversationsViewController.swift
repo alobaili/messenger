@@ -186,5 +186,15 @@ extension ConversationsViewController: UITableViewDelegate {
         navigationController?.pushViewController(viewController, animated: true)
     }
     
+    func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+        .delete
+    }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            DatabaseManager.shared.deleteConversation(conversations[indexPath.row])
+        }
+    }
+    
     
 }

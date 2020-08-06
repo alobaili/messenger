@@ -224,6 +224,7 @@ class RegisterViewController: UIViewController {
                                         case .success(let url):
                                             print(url)
                                             UserDefaults.standard.set(url, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
+                                            NotificationCenter.default.post(name: .didSignIn, object: nil)
                                             self.navigationController?.dismiss(animated: true)
                                         case .failure(let error):
                                             print(error)
