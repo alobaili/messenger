@@ -76,8 +76,15 @@ class ConversationsViewController: UIViewController {
     @objc private func didTapComposeButton() {
         let viewController = NewConversationViewController()
         
-        viewController.completion = { [unowned self] (selectedUserData) in
-            self.createNewConversation(forUser: selectedUserData)
+        viewController.completion = { [weak self] (selectedUserData) in
+            guard let self = self else { return }
+            
+            if let targetConversation = self.conversations.first(where: { $0.otherUserID == selectedUserData.id.safeForDatabaseReferenceChild() }) {
+                self.openConversation(targetConversation, isNewConversation: false)
+            } else {
+                self.createNewConversation(forUser: selectedUserData)
+            }
+            
         }
         
         let navigationController = UINavigationController(rootViewController: viewController)
@@ -91,11 +98,28 @@ class ConversationsViewController: UIViewController {
             else {
             return
         }
-        let viewController = ChatViewController(userID: user.id, conversationID: nil)
-        viewController.isNewConversation = true
-        viewController.title = "\(firstName) \(lastName)"
-        viewController.navigationItem.largeTitleDisplayMode = .never
-        navigationController?.pushViewController(viewController, animated: true)
+        
+        // Check in the database if a conversation already exists for these two users
+        // If true, reuse its ID
+        // If false, create a new conversation in the database between these two users
+        
+        DatabaseManager.shared.getConversation(withRecipientID: user.id) { [weak self] (conversationID) in
+            guard let self = self else { return }
+            
+            if let conversationID = conversationID {
+                let viewController = ChatViewController(userID: user.id.safeForDatabaseReferenceChild(), conversationID: conversationID)
+                viewController.isNewConversation = false
+                viewController.title = "\(firstName) \(lastName)"
+                viewController.navigationItem.largeTitleDisplayMode = .never
+                self.navigationController?.pushViewController(viewController, animated: true)
+            } else {
+                let viewController = ChatViewController(userID: user.id.safeForDatabaseReferenceChild(), conversationID: nil)
+                viewController.isNewConversation = true
+                viewController.title = "\(firstName) \(lastName)"
+                viewController.navigationItem.largeTitleDisplayMode = .never
+                self.navigationController?.pushViewController(viewController, animated: true)
+            }
+        }
     }
     
     private func setupAutoLayout() {
@@ -133,18 +157,11 @@ class ConversationsViewController: UIViewController {
             NotificationCenter.default.removeObserver(observer)
         }
         
-        DatabaseManager.shared.getAllConversations(forUserID: userID.safeForDatabaseReferenceChild()) { [unowned self] (result) in
-            switch result {
-                case .success(let conversations):
-                    guard !conversations.isEmpty else { return }
-                
-                    self.conversations = conversations
-                
-                    DispatchQueue.main.async {
-                        self.tableView.reloadData()
-                    }
-                case .failure(let error):
-                    print("Failed to get conversations: \(error)")
+        DatabaseManager.shared.getAllConversations(forUserID: userID.safeForDatabaseReferenceChild()) { [unowned self] (conversations) in
+            self.conversations = conversations
+            
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
             }
         }
     }
@@ -180,7 +197,13 @@ extension ConversationsViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         let conversation = conversations[indexPath.row]
         
-        let viewController = ChatViewController(userID: conversation.otherUserID, conversationID: conversation.id)
+        openConversation(conversation, isNewConversation: false)
+    }
+    
+    func openConversation(_ conversation: Conversation, isNewConversation: Bool) {
+        let viewController = ChatViewController(userID: conversation.otherUserID,
+                                                conversationID: isNewConversation ? nil : conversation.id)
+        viewController.isNewConversation = isNewConversation
         viewController.title = conversation.name
         viewController.navigationItem.largeTitleDisplayMode = .never
         navigationController?.pushViewController(viewController, animated: true)

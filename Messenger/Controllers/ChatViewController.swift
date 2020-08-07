@@ -254,7 +254,7 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
         if isNewConversation {
             // Create a new conversation in the database
             DatabaseManager.shared
-                .createNewConversation(withUserID: otherUserID, name: Auth.auth().currentUser?.displayName ?? "User", firstMessage: message) { [unowned self] (success) in
+                .createNewConversation(withUserID: otherUserID, name: title ?? "User", firstMessage: message) { [unowned self] (success) in
                     if success {
                         print("message sent")
                         self.isNewConversation = false
@@ -264,9 +264,9 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
                     }
             }
         } else {
-            guard let conversationID = conversationID, let name = Auth.auth().currentUser?.displayName else { return }
+            guard let conversationID = conversationID, let name = title else { return }
             // Append to the existing conversation
-            DatabaseManager.shared.sendMessage(message, recipientID: otherUserID, conversationID: conversationID, senderName: name) { (success) in
+            DatabaseManager.shared.sendMessage(message, recipientID: otherUserID, conversationID: conversationID, name: name) { (success) in
                 if success {
                     print("message sent")
                     inputBar.inputTextView.text = nil
@@ -320,7 +320,7 @@ extension ChatViewController: UIImagePickerControllerDelegate, UINavigationContr
                         let message = Message(sender: self.currentUser, messageId: id, sentDate: Date(), kind: .photo(image))
                         
                         // Send the message
-                        DatabaseManager.shared.sendMessage(message, recipientID: self.otherUserID, conversationID: conversationID, senderName: senderName) { (success) in
+                        DatabaseManager.shared.sendMessage(message, recipientID: self.otherUserID, conversationID: conversationID, name: senderName) { (success) in
                             if success {
                                 print("Sent image message")
                             } else {
@@ -360,7 +360,7 @@ extension ChatViewController: UIImagePickerControllerDelegate, UINavigationContr
                         let message = Message(sender: self.currentUser, messageId: id, sentDate: Date(), kind: .video(image))
                         
                         // Send the message
-                        DatabaseManager.shared.sendMessage(message, recipientID: self.otherUserID, conversationID: conversationID, senderName: senderName) { (success) in
+                        DatabaseManager.shared.sendMessage(message, recipientID: self.otherUserID, conversationID: conversationID, name: senderName) { (success) in
                             if success {
                                 print("Sent image message")
                             } else {

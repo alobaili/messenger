@@ -101,6 +101,40 @@ extension DatabaseManager {
 
 extension DatabaseManager {
     
+    public func getConversation(withRecipientID recipientID: String, completion: @escaping (String?) -> Void) {
+        guard let senderID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
+            completion(nil)
+            return
+        }
+        
+        database.child("users").child("\(recipientID.safeForDatabaseReferenceChild())/conversations").observeSingleEvent(of: .value) { (snapshot) in
+            guard let recipientConversations = snapshot.value as? [[String: Any]] else {
+                completion(nil)
+                return
+            }
+            
+            // Among the recipient's conversations, find the one where the other party is the currently logged in user.
+            if let conversation = recipientConversations.first(where: {
+                guard let targetSenderID = $0["other_user_id"] as? String else {
+                    return false
+                }
+                
+                return targetSenderID == senderID.safeForDatabaseReferenceChild()
+            }) {
+                // The conversation was found, complete with its ID.
+                guard let id = conversation["id"] as? String else {
+                    completion(nil)
+                    return
+                }
+                
+                completion(id)
+            } else {
+                // The conversation wasn't found, complete with a failure.
+                completion(nil)
+            }
+        }
+    }
+    
     public func createNewConversation(withUserID userID: String, name: String, firstMessage: Message, completion: @escaping (Bool) -> Void) {
         guard let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
             return
@@ -261,10 +295,10 @@ extension DatabaseManager {
         }
     }
     
-    public func getAllConversations(forUserID userID: String, completion: @escaping (Result<[Conversation], Error>) -> Void) {
+    public func getAllConversations(forUserID userID: String, completion: @escaping ([Conversation]) -> Void) {
         database.child("users/\(userID.safeForDatabaseReferenceChild())/conversations").observe(.value) { (snapshot) in
             guard let value = snapshot.value as? [[String: Any]] else {
-                completion(.failure(DatabaseError.failedToFetch))
+                completion([])
                 return
             }
             
@@ -288,7 +322,7 @@ extension DatabaseManager {
                 return conversation
             }
             
-            completion(.success(conversations))
+            completion(conversations)
         }
     }
     
@@ -346,7 +380,7 @@ extension DatabaseManager {
         }
     }
     
-    public func sendMessage(_ message: Message, recipientID: String, conversationID: String, senderName: String, completion: @escaping (Bool) -> Void) {
+    public func sendMessage(_ message: Message, recipientID: String, conversationID: String, name: String, completion: @escaping (Bool) -> Void) {
         guard let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
             completion(false)
             return
@@ -395,7 +429,7 @@ extension DatabaseManager {
                 "date": self.iso8601DateFormatter.string(from: message.sentDate),
                 "sender_id": senderID,
                 "is_read": false,
-                "name": senderName
+                "name": name
             ]
             
             currentMessages.append(newMessage)
@@ -415,48 +449,84 @@ extension DatabaseManager {
                 
                 // Update the sender's latest message
                 self.database.child("users").child("\(currentUserID.safeForDatabaseReferenceChild())/conversations").observeSingleEvent(of: .value) { (snapshot) in
-                    guard var currentUserConversations = snapshot.value as? [[String: Any]] else {
-                        completion(false)
-                        return
+                    var updatedCurrentUserConversations = [[String: Any]]()
+                    
+                    if var currentUserConversations = snapshot.value as? [[String: Any]] {
+                        if let conversationIndex = currentUserConversations.firstIndex(where: { ($0["id"] as! String) == conversationID }) {
+                            currentUserConversations[conversationIndex]["latest_message"] = newLatestMessage
+                            updatedCurrentUserConversations = currentUserConversations
+                        } else {
+                            let newConversation: [String: Any] = [
+                                "id": conversationID,
+                                "other_user_id": recipientID.safeForDatabaseReferenceChild(),
+                                "name": name,
+                                "latest_message": newLatestMessage,
+                            ]
+                            currentUserConversations.append(newConversation)
+                            updatedCurrentUserConversations = currentUserConversations
+                        }
+                    } else {
+                        updatedCurrentUserConversations = [
+                            [
+                                "id": conversationID,
+                                "other_user_id": recipientID.safeForDatabaseReferenceChild(),
+                                "name": name,
+                                "latest_message": newLatestMessage,
+                            ]
+                        ]
                     }
                     
-                    if let conversationIndex = currentUserConversations.firstIndex(where: { ($0["id"] as! String) == conversationID }) {
-                        currentUserConversations[conversationIndex]["latest_message"] = newLatestMessage
-                        
-                        self.database
-                            .child("users")
-                            .child("\(currentUserID.safeForDatabaseReferenceChild())/conversations")
-                            .setValue(currentUserConversations) { (error, _) in
-                                if let error = error {
-                                    print(error)
-                                    completion(false)
-                                    return
-                                }
+                    self.database
+                        .child("users")
+                        .child("\(currentUserID.safeForDatabaseReferenceChild())/conversations")
+                        .setValue(updatedCurrentUserConversations) { (error, _) in
+                            if let error = error {
+                                print(error)
+                                completion(false)
+                                return
+                            }
+                            
+                            // Update the recipient's latest message
+                            self.database.child("users").child("\(recipientID.safeForDatabaseReferenceChild())/conversations").observeSingleEvent(of: .value) { (snapshot) in
                                 
-                                // Update the recipient's latest message
-                                self.database.child("users").child("\(recipientID.safeForDatabaseReferenceChild())/conversations").observeSingleEvent(of: .value) { (snapshot) in
-                                    guard var recipientConversations = snapshot.value as? [[String: Any]] else {
-                                        completion(false)
-                                        return
-                                    }
-                                    
+                                var updatedRecipientConversations = [[String: Any]]()
+                                
+                                if var recipientConversations = snapshot.value as? [[String: Any]] {
                                     if let conversationIndex = recipientConversations.firstIndex(where: { ($0["id"] as! String) == conversationID }) {
                                         recipientConversations[conversationIndex]["latest_message"] = newLatestMessage
-                                        
-                                        self.database
-                                            .child("users")
-                                            .child("\(recipientID.safeForDatabaseReferenceChild())/conversations")
-                                            .setValue(recipientConversations) { (error, _) in
-                                                if let error = error {
-                                                    print(error)
-                                                    completion(false)
-                                                    return
-                                                }
-                                                completion(true)
-                                        }
+                                        updatedRecipientConversations = recipientConversations
+                                    } else {
+                                        let newConversation: [String: Any] = [
+                                            "id": conversationID,
+                                            "other_user_id": currentUserID.safeForDatabaseReferenceChild(),
+                                            "name": Auth.auth().currentUser!.displayName!,
+                                            "latest_message": newLatestMessage,
+                                        ]
+                                        recipientConversations.append(newConversation)
+                                        updatedRecipientConversations = recipientConversations
                                     }
+                                } else {
+                                    let newConversation: [String: Any] = [
+                                        "id": conversationID,
+                                        "other_user_id": currentUserID.safeForDatabaseReferenceChild(),
+                                        "name": Auth.auth().currentUser!.displayName!,
+                                        "latest_message": newLatestMessage,
+                                    ]
+                                    updatedRecipientConversations = [newConversation]
                                 }
-                        }
+                                
+                                self.database
+                                    .child("users")
+                                    .child("\(recipientID.safeForDatabaseReferenceChild())/conversations")
+                                    .setValue(updatedRecipientConversations) { (error, _) in
+                                        if let error = error {
+                                            print(error)
+                                            completion(false)
+                                            return
+                                        }
+                                        completion(true)
+                                }
+                            }
                     }
                 }
             }
