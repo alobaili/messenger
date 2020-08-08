@@ -9,6 +9,7 @@
 import UIKit
 import FirebaseAuth
 import AuthenticationServices
+import SDWebImage
 
 class ProfileViewController: UIViewController {
     
@@ -22,7 +23,15 @@ class ProfileViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
+        let navBarAppearance = UINavigationBarAppearance()
+        navBarAppearance.backgroundColor = .systemGroupedBackground
+        
+        navigationController?.navigationBar.standardAppearance = navBarAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = navBarAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance?.shadowColor = nil
+        navigationController?.navigationBar.backgroundColor = .systemGroupedBackground
+        
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
@@ -31,6 +40,8 @@ class ProfileViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
+        navigationItem.title = Auth.auth().currentUser?.displayName
         
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(appleIDCredentialRevoked),
@@ -111,29 +122,16 @@ class ProfileViewController: UIViewController {
             imageView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor)
         ])
         
-        StorageManager.shared.getDownloadURL(for: path) { [unowned self] (result) in
+        StorageManager.shared.getDownloadURL(for: path) { (result) in
             switch result {
                 case .success(let url):
-                    self.downloadImage(for: imageView, url: url)
+                    imageView.sd_setImage(with: url)
                 case .failure(let error):
                     print("Failed to get download URL: \(error)")
             }
         }
 
         return headerView
-    }
-    
-    func downloadImage(for imageView: UIImageView, url: URL) {
-        URLSession.shared.dataTask(with: url) { (data, _, error) in
-            guard let data = data else {
-                return
-            }
-            
-            DispatchQueue.main.async {
-                let image = UIImage(data: data)
-                imageView.image = image
-            }
-        }.resume()
     }
     
 
