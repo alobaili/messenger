@@ -10,6 +10,7 @@ import Foundation
 import FirebaseDatabase
 import FirebaseAuth
 import MessageKit
+import CoreLocation
 
 final class DatabaseManager {
     
@@ -351,19 +352,37 @@ extension DatabaseManager {
                 var kind: MessageKind?
                 
                 switch typeString {
-                    case "text": kind = .text(content)
+                    case "text":
+                        kind = .text(content)
+                    
                     case "photo":
                         let media = Media(url: URL(string: content),
                                           image: nil,
                                           placeholderImage: UIImage(systemName: "plus")!,
                                           size: CGSize(width: 300, height: 300))
                         kind = .photo(media)
+                    
                     case "video":
                         let media = Media(url: URL(string: content),
                                           image: nil,
                                           placeholderImage: UIImage(systemName: "play.rectangle.fill")!,
                                           size: CGSize(width: 300, height: 300))
                         kind = .video(media)
+                    
+                    case "location":
+                        let coordinateComponents = content.components(separatedBy: ",")
+                        guard
+                            let latitude = CLLocationDegrees(coordinateComponents[0]),
+                            let longitude = CLLocationDegrees(coordinateComponents[1])
+                            else {
+                                return nil
+                        }
+                        
+                        let location = Location(location: CLLocation(latitude: latitude, longitude: longitude),
+                                                size: CGSize(width: 300, height: 150))
+                        
+                        kind = .location(location)
+                    
                     default: break
                 }
                 
@@ -408,8 +427,9 @@ extension DatabaseManager {
                     if let urlString = media.url?.absoluteString {
                         content = urlString
                     }
-                case .location(_):
-                    break
+                case .location(let locationItem):
+                    let location = locationItem.location
+                    content = "\(location.coordinate.latitude),\(location.coordinate.longitude)"
                 case .emoji(_):
                     break
                 case .audio(_):
@@ -429,7 +449,7 @@ extension DatabaseManager {
                 "date": self.iso8601DateFormatter.string(from: message.sentDate),
                 "sender_id": senderID,
                 "is_read": false,
-                "name": name
+                "name": Auth.auth().currentUser!.displayName!
             ]
             
             currentMessages.append(newMessage)

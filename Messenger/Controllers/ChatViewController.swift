@@ -13,6 +13,8 @@ import FirebaseAuth
 import SDWebImage
 import CoreServices
 import AVKit
+import CoreLocation
+import MapKit
 
 struct Message: MessageType {
     
@@ -57,6 +59,14 @@ struct Media: MediaItem {
     var url: URL?
     var image: UIImage?
     var placeholderImage: UIImage
+    var size: CGSize
+    
+    
+}
+
+struct Location: LocationItem {
+    
+    var location: CLLocation
     var size: CGSize
     
     
@@ -149,8 +159,10 @@ class ChatViewController: MessagesViewController {
             self.present(picker, animated: true)
         }))
         
-        actionSheet.addAction(UIAlertAction(title: "Video", style: .default, handler: { (_) in
+        actionSheet.addAction(UIAlertAction(title: "Location", style: .default, handler: { [weak self] (_) in
+            guard let self = self else { return }
             
+            self.presentLocationPicker()
         }))
         
         actionSheet.addAction(UIAlertAction(title: "Audio", style: .default, handler: { (_) in
@@ -162,7 +174,38 @@ class ChatViewController: MessagesViewController {
         present(actionSheet, animated: true)
     }
     
-    
+    private func presentLocationPicker() {
+        let locationPicker = LocationPickerViewController()
+        
+        locationPicker.completion = { [weak self] (selectedCoordinate) in
+            guard let self = self, let conversationID = self.conversationID else { return }
+            
+            let latitude = selectedCoordinate.latitude
+            let longitude = selectedCoordinate.longitude
+            
+            let location = Location(location: CLLocation(latitude: latitude, longitude: longitude),
+                                    size: .zero)
+            
+            let messageID = "message_location_\(self.createUniqueID())"
+            
+            let message = Message(sender: self.currentUser,
+                                  messageId: messageID,
+                                  sentDate: Date(),
+                                  kind: .location(location))
+            
+            // Send the message
+            DatabaseManager.shared.sendMessage(message, recipientID: self.otherUserID, conversationID: conversationID, name: self.title ?? "") { (success) in
+                if success {
+                    print("Sent location message")
+                } else {
+                    print("Failed to send location message")
+                }
+            }
+        }
+        
+        let navigationController = UINavigationController(rootViewController: locationPicker)
+        present(navigationController, animated: true)
+    }
     
     private func startListeningForMessages(forConversationID conversationID: String) {
         DatabaseManager.shared.getAllMessages(forConversationID: conversationID) { [weak self] (result) in
@@ -215,6 +258,21 @@ extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, Messag
 }
 
 extension ChatViewController: MessageCellDelegate {
+    
+    func didTapMessage(in cell: MessageCollectionViewCell) {
+        guard let indexPath = messagesCollectionView.indexPath(for: cell) else { return }
+        let message = messages[indexPath.section]
+        
+        switch message.kind {
+            case .location(let locationItem):
+                let coordinate = locationItem.location.coordinate
+                let viewController = LocationPickerViewController(coordinate: coordinate)
+                let navigationController = UINavigationController(rootViewController: viewController)
+                present(navigationController, animated: true)
+            default:
+                break
+        }
+    }
     
     func didTapImage(in cell: MessageCollectionViewCell) {
         guard let indexPath = messagesCollectionView.indexPath(for: cell) else { return }
@@ -326,7 +384,7 @@ extension ChatViewController: UIImagePickerControllerDelegate, UINavigationContr
                             } else {
                                 print("Failed to send image message")
                             }
-                    }
+                        }
                     case .failure(let error):
                         print("Failed to upload message image: \(error)")
                 }
