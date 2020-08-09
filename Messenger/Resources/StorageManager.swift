@@ -9,6 +9,7 @@
 import Foundation
 import FirebaseStorage
 
+/// A manager object for communicating with Firebase Storage.
 final class StorageManager {
     
     public enum StorageError: Error {
@@ -16,25 +17,37 @@ final class StorageManager {
         case failedToGetDownloadURL
     }
     
+    /// The singleton object for this class.
     static let shared = StorageManager()
+    
     private let storage = Storage.storage().reference()
     
     
     private init() {}
     
-    /// Uploads an image to firebase and completes with the URL of that image.
+    /// Uploads a profile image to firebase and completes with the URL of that image.
     /// - Parameters:
     ///   - data: The profile image data.
     ///   - fileName: The file name that will store the image data.
-    ///   - completion: The completion takes a `Result` that succeeds with a `String` representing the URL of the uploaded image and fails with an `Error`, and returns `Void`.
+    ///   - completion: The completion takes a `Result` that succeeds with a `URL` of the uploaded image and fails with an `Error`, and returns `Void`.
     public func uploadProfileImage(with data: Data, fileName: String, completion: @escaping (Result<URL, Error>) -> Void) {
         uploadImage(with: data, path: "images/\(fileName)", fileName: fileName, completion: completion)
     }
     
+    /// Uploads a message image to firebase and completes with the URL of that image.
+    /// - Parameters:
+    ///   - data: The message image data.
+    ///   - fileName: The file name that will store the image data.
+    ///   - completion: The completion takes a `Result` that succeeds with a `URL` of the uploaded image and fails with an `Error`, and returns `Void`.
     public func uploadMessageImage(with data: Data, fileName: String, completion: @escaping (Result<URL, Error>) -> Void) {
         uploadImage(with: data, path: "message_images/\(fileName)", fileName: fileName, completion: completion)
     }
     
+    /// Uploads a message video to firebase and completes with the URL of that video.
+    /// - Parameters:
+    ///   - fileURL: The local URL of the video.
+    ///   - fileName: The name used when storing the video in Firebase Storage.
+    ///   - completion: The completion takes a `Result` that succeeds with a `URL` of the uploaded video and fails with an `Error`, and returns `Void`.
     public func uploadMessageVideo(with fileURL: URL, fileName: String, completion: @escaping (Result<URL, Error>) -> Void) {
         storage.child("message_videos/\(fileName)").putFile(from: fileURL, metadata: nil) { [weak self] (metadata, error) in
             guard let self = self else { return }
@@ -72,6 +85,10 @@ final class StorageManager {
         }
     }
     
+    /// Fetches Firebase Storage for a direct URL for a file in the specified path.
+    /// - Parameters:
+    ///   - path: The Firebase Storage path to look for.
+    ///   - completion: The completion takes a `Result` that succeeds with a `URL` of the file and fails with an `Error`, and returns `Void`.
     public func getDownloadURL(for path: String, completion: @escaping (Result<URL, Error>) -> Void) {
         storage.child(path).downloadURL { (url, error) in
             if let error = error {

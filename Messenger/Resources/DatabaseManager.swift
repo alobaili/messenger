@@ -12,18 +12,21 @@ import FirebaseAuth
 import MessageKit
 import CoreLocation
 
+/// A manager object for communicating with Firebase's Realtime Database.
 final class DatabaseManager {
     
     public enum DatabaseError: Error {
         case failedToFetch
     }
     
-    static let shared = DatabaseManager()
-    private let database = Database.database().reference()
-    let iso8601DateFormatter = ISO8601DateFormatter()
+    /// The singleton object for this class.
+    public static let shared = DatabaseManager()
     
-    let encoder = JSONEncoder()
-    let decoder = JSONDecoder()
+    private let database = Database.database().reference()
+    private let iso8601DateFormatter = ISO8601DateFormatter()
+    
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
     
     
     private init() {
@@ -38,11 +41,15 @@ final class DatabaseManager {
 
 extension DatabaseManager {
     
+    /// Inserts a user into the database.
+    /// - Parameters:
+    ///   - user: The user to insert.
+    ///   - completion: Completes with `true` if the insertion is successful. Otherwise, complete's with `false`.
     public func insertUser(_ user: MessengerUser, completion: @escaping (Bool) -> Void) {
         do {
             let userData = try encoder.encode(user)
             let userDictionary = try JSONSerialization.jsonObject(with: userData, options: .allowFragments) as! [String: Any]
-            database.child("users").child(user.id.safeForDatabaseReferenceChild()).setValue(userDictionary) { (error, databaseReference) in
+            database.child("users").child(user.id.safeForDatabaseReferenceChild()).setValue(userDictionary) { (error, _) in
                 if let error = error {
                     print("Failed to insert the user into the database: \(error)")
                     completion(false)
@@ -56,13 +63,19 @@ extension DatabaseManager {
         }
     }
     
+    /// Checks the database if a user with the specified `id` exists.
+    /// - Parameters:
+    ///   - id: The user ID to check for.
+    ///   - completion: Completes with `true` if the user exists. Otherwise, completes with `false`.
     public func userExists(withID id: String, completion: @escaping (Bool) -> Void) {
         database.child("users").child(id.safeForDatabaseReferenceChild()).observeSingleEvent(of: .value) { (snapshot) in
             completion(snapshot.exists())
         }
     }
     
-    public func getAllUsers(completion: @escaping (Result<[MessengerUser],Error>) -> Void) {
+    /// Fetches the list of all users in the database.
+    /// - Parameter completion: Completes with a successful `Result` containing the array of `MessengerUser` objects. Otherwise, completes with a failed `Result` containing the error.
+    public func getAllUsers(completion: @escaping (Result<[MessengerUser], Error>) -> Void) {
         database.child("users").observeSingleEvent(of: .value) { [weak self] (snapshot) in
             guard let self = self, let value = snapshot.value as? [String: [String: Any]] else {
                 completion(.failure(DatabaseError.failedToFetch))
@@ -102,6 +115,10 @@ extension DatabaseManager {
 
 extension DatabaseManager {
     
+    /// Fetches from the database a conversation in the recipient's conversations where the other party is the currently signed in user.
+    /// - Parameters:
+    ///   - recipientID: The user ID of the recipient.
+    ///   - completion: Completes with the conversation ID if the conversation exists. Otherwise, completes with `nil`.
     public func getConversation(withRecipientID recipientID: String, completion: @escaping (String?) -> Void) {
         guard let senderID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
             completion(nil)
@@ -136,6 +153,12 @@ extension DatabaseManager {
         }
     }
     
+    /// creates a new conversation in the database between the currently signed in user and another user.
+    /// - Parameters:
+    ///   - userID: The recipient user's ID.
+    ///   - name: The recipient user's name.
+    ///   - firstMessage: The first message to associate with the new conversation.
+    ///   - completion: Completes with `true` if the conversation is created successfully. Otherwise, completes with `false`.
     public func createNewConversation(withUserID userID: String, name: String, firstMessage: Message, completion: @escaping (Bool) -> Void) {
         guard let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
             return
@@ -298,6 +321,12 @@ extension DatabaseManager {
         }
     }
     
+    /// Fetches the database for the list of all conversations for the specifies user ID.
+    ///
+    /// This function reactively monitor's the conversations for the specified user and calls `completion` whenever there is a change (insertion, update, or deletion).
+    /// - Parameters:
+    ///   - userID: The ID of the user owning the requested conversations.
+    ///   - completion: Completes with an array of `Conversation` objects. If there are no conversations, completes with an empty array.
     public func getAllConversations(forUserID userID: String, completion: @escaping ([Conversation]) -> Void) {
         database.child("users/\(userID.safeForDatabaseReferenceChild())/conversations").observe(.value) { (snapshot) in
             guard let value = snapshot.value as? [[String: Any]] else {
@@ -329,6 +358,12 @@ extension DatabaseManager {
         }
     }
     
+    /// Fetched the database for all messages belonging to the specified conversation ID.
+    ///
+    /// This function reactively monitor's the messages for the specified conversation and calls `completion` whenever there's a change (insertion, update, or deletion).
+    /// - Parameters:
+    ///   - conversationID: The ID of the conversation owning the requested messages.
+    ///   - completion: Completes with a successful `Result` containing an array of `Message` objects. If there are no messages, completes with a failed `Result` containing an `Error`.
     public func getAllMessages(forConversationID conversationID: String, completion: @escaping (Result<[Message], Error>) -> Void) {
         database.child("\(conversationID.safeForDatabaseReferenceChild())/messages").observe(.value) { [weak self] (snapshot) in
             guard let self = self, let value = snapshot.value as? [[String: Any]] else {
@@ -401,6 +436,13 @@ extension DatabaseManager {
         }
     }
     
+    /// Sends a message to the specified recipient user ID and conversation ID.
+    /// - Parameters:
+    ///   - message: The message to send.
+    ///   - recipientID: The recipient user ID who should receive the message.
+    ///   - conversationID: The conversation ID owning the message.
+    ///   - name: Name of the user associated with this message.
+    ///   - completion: Completes with `true` if the message was successfully sent. Otherwise, completes with `false`.
     public func sendMessage(_ message: Message, recipientID: String, conversationID: String, name: String, completion: @escaping (Bool) -> Void) {
         guard let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
             completion(false)
@@ -555,6 +597,8 @@ extension DatabaseManager {
         }
     }
     
+    /// Deletes the specified conversation for the currently signed in user from the database.
+    /// - Parameter conversation: The conversation to delete.
     public func deleteConversation(_ conversation: Conversation) {
         guard let currentUserID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else {
             return
