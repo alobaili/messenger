@@ -6,6 +6,7 @@ target 'Messenger' do
   use_frameworks!
 
   # Firebase
+  pod 'Firebase/Crashlytics'
   pod 'Firebase/Analytics'
   pod 'Firebase/Core'
   pod 'Firebase/Auth'
