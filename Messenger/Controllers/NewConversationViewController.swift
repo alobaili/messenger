@@ -81,7 +81,9 @@ class NewConversationViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
             self.navigationItem.searchController?.searchBar.becomeFirstResponder()
         }
     }
@@ -114,7 +116,9 @@ extension NewConversationViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         
         let selectedUserData = results[indexPath.row]
-        presentingViewController?.dismiss(animated: true) { [unowned self] in
+        presentingViewController?.dismiss(animated: true) { [weak self] in
+            guard let self = self else { return }
+            
             self.completion?(selectedUserData)
         }
     }
@@ -140,7 +144,9 @@ extension NewConversationViewController: UISearchBarDelegate {
             filterUsers(with: query)
         } else {
             progressHUD.show(in: view)
-            DatabaseManager.shared.getAllUsers { [unowned self] (result) in
+            DatabaseManager.shared.getAllUsers { [weak self] (result) in
+                guard let self = self else { return }
+                
                 switch result {
                     case .success(let users):
                         self.hasFetched = true

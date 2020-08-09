@@ -151,7 +151,9 @@ class ConversationsViewController: UIViewController {
             NotificationCenter.default.removeObserver(observer)
         }
         
-        DatabaseManager.shared.getAllConversations(forUserID: userID.safeForDatabaseReferenceChild()) { [unowned self] (conversations) in
+        DatabaseManager.shared.getAllConversations(forUserID: userID.safeForDatabaseReferenceChild()) { [weak self] (conversations) in
+            guard let self = self else { return }
+            
             self.conversations = conversations
             
             DispatchQueue.main.async {

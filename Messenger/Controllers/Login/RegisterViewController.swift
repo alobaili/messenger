@@ -184,7 +184,9 @@ class RegisterViewController: UIViewController {
         
         progressHUD.show(in: view)
         
-        DatabaseManager.shared.userExists(withID: email) { [unowned self] (exist) in
+        DatabaseManager.shared.userExists(withID: email) { [weak self] (exist) in
+            guard let self = self else { return }
+            
             DispatchQueue.main.async {
                 self.progressHUD.dismiss()
             }
@@ -289,13 +291,17 @@ extension RegisterViewController: UIImagePickerControllerDelegate, UINavigationC
         actionSheet.addAction(UIAlertAction(
             title: "Camera",
             style: .default,
-            handler: { [unowned self] (_) in
+            handler: { [weak self] (_) in
+                guard let self = self else { return }
+                
                 self.presentImagePicker(sourceType: .camera)
         }))
         actionSheet.addAction(UIAlertAction(
             title: "Photo Library",
             style: .default,
-            handler: { [unowned self] (_) in
+            handler: { [weak self] (_) in
+                guard let self = self else { return }
+                
                 self.presentImagePicker(sourceType: .photoLibrary)
         }))
         present(actionSheet, animated: true)

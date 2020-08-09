@@ -176,7 +176,9 @@ class SignInViewController: UIViewController {
         
         progressHUD.show(in: view)
         
-        Auth.auth().signIn(withEmail: email, password: password) { [unowned self] (result, error) in
+        Auth.auth().signIn(withEmail: email, password: password) { [weak self] (result, error) in
+            guard let self = self else { return }
+            
             DispatchQueue.main.async {
                 self.progressHUD.dismiss()
             }
@@ -253,7 +255,7 @@ extension SignInViewController: UITextFieldDelegate {
 extension SignInViewController: ASAuthorizationControllerPresentationContextProviding {
     
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        self.view.window!
+        view.window!
     }
     
     
@@ -307,7 +309,9 @@ extension SignInViewController: ASAuthorizationControllerDelegate {
             progressHUD.show(in: view)
             
             // Sign in with Firebase.
-            Auth.auth().signIn(with: credential) { [unowned self] (authResult, error) in
+            Auth.auth().signIn(with: credential) { [weak self] (authResult, error) in
+                guard let self = self else { return }
+                
                 DispatchQueue.main.async {
                     self.progressHUD.dismiss()
                 }

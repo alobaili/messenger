@@ -28,7 +28,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func handleAppleIDCredentialRevokedWhileTerminated() {
         if let userID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) {
             // Check Apple ID credential state
-            ASAuthorizationAppleIDProvider().getCredentialState(forUserID: userID) { [unowned self] (credentialState, error) in
+            ASAuthorizationAppleIDProvider().getCredentialState(forUserID: userID) { [weak self] (credentialState, error) in
+                guard let self = self else { return }
+                
                 switch credentialState {
                     case .authorized: break
                     case .notFound, .transferred, .revoked: self.signOut()

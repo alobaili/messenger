@@ -79,7 +79,8 @@ class ConversationTableViewCell: UITableViewCell {
         
         let path = "images/\(conversation.otherUserID.safeForDatabaseReferenceChild())_profile_image.png"
         
-        StorageManager.shared.getDownloadURL(for: path) { [unowned self] (result) in
+        StorageManager.shared.getDownloadURL(for: path) { [weak self] (result) in
+            guard let self = self else { return }
             switch result {
                 case .success(let url):
                     DispatchQueue.main.async {

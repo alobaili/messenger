@@ -127,6 +127,7 @@ class ChatViewController: MessagesViewController {
         button.setImage(UIImage(systemName: "paperclip"), for: .normal)
         button.onTouchUpInside { [weak self] _ in
             guard let self = self else { return }
+            
             self.presentAddAttachmentActionSheet()
         }
         messageInputBar.setLeftStackViewWidthConstant(to: 36, animated: false)
@@ -213,6 +214,7 @@ class ChatViewController: MessagesViewController {
     private func startListeningForMessages(forConversationID conversationID: String) {
         DatabaseManager.shared.getAllMessages(forConversationID: conversationID) { [weak self] (result) in
             guard let self = self else { return }
+            
             switch result {
                 case .success(let messages):
                     guard !messages.isEmpty else { return }
@@ -335,12 +337,12 @@ extension ChatViewController: MessageCellDelegate {
                 guard let imageURL = media.url else { return }
                 let viewController = PhotoViewerViewController(with: imageURL)
                 viewController.hidesBottomBarWhenPushed = true
-                self.navigationController?.pushViewController(viewController, animated: true)
+                navigationController?.pushViewController(viewController, animated: true)
             case .video(let media):
                 guard let videoURL = media.url else { return }
                 let viewController = AVPlayerViewController()
                 viewController.player = AVPlayer(url: videoURL)
-                self.present(viewController, animated: true) {
+                present(viewController, animated: true) {
                     viewController.player?.play()
                 }
             default:
@@ -363,7 +365,9 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
         if isNewConversation {
             // Create a new conversation in the database
             DatabaseManager.shared
-                .createNewConversation(withUserID: otherUserID, name: title ?? "User", firstMessage: message) { [unowned self] (success) in
+                .createNewConversation(withUserID: otherUserID, name: title ?? "User", firstMessage: message) { [weak self] (success) in
+                    guard let self = self else { return }
+                    
                     if success {
                         print("message sent")
                         self.isNewConversation = false

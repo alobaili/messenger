@@ -63,8 +63,8 @@ extension DatabaseManager {
     }
     
     public func getAllUsers(completion: @escaping (Result<[MessengerUser],Error>) -> Void) {
-        database.child("users").observeSingleEvent(of: .value) { (snapshot) in
-            guard let value = snapshot.value as? [String: [String: Any]] else {
+        database.child("users").observeSingleEvent(of: .value) { [weak self] (snapshot) in
+            guard let self = self, let value = snapshot.value as? [String: [String: Any]] else {
                 completion(.failure(DatabaseError.failedToFetch))
                 return
             }
@@ -145,8 +145,8 @@ extension DatabaseManager {
         
         let reference = database.child("users").child(safeCurrentUserID)
         
-        reference.observeSingleEvent(of: .value) { [unowned self] (snapshot) in
-            guard snapshot.exists(), var user = snapshot.value as? [String: Any] else {
+        reference.observeSingleEvent(of: .value) { [weak self] (snapshot) in
+            guard let self = self, snapshot.exists(), var user = snapshot.value as? [String: Any] else {
                 print("User ID '\(safeCurrentUserID)' was not found.")
                 completion(false)
                 return
@@ -201,7 +201,9 @@ extension DatabaseManager {
             
             // Update recipient user conversations array
             self.database.child("users").child("\(userID.safeForDatabaseReferenceChild())/conversations")
-                .observeSingleEvent(of: .value) { [unowned self] (snapshot) in
+                .observeSingleEvent(of: .value) { [weak self] (snapshot) in
+                    guard let self = self else { return }
+                    
                     if var conversations = snapshot.value as? [[String: Any]] {
                         // conversations array for current user
                         // append the new conversation to it
@@ -230,7 +232,7 @@ extension DatabaseManager {
                 user["conversations"] = [ newConversation ]
             }
             
-            reference.setValue(user) { [unowned self] (error, _) in
+            reference.setValue(user) { (error, _) in
                 if let error = error {
                     print("Failed to create a new conversations array for \(safeCurrentUserID): \(error)")
                     completion(false)
@@ -328,8 +330,8 @@ extension DatabaseManager {
     }
     
     public func getAllMessages(forConversationID conversationID: String, completion: @escaping (Result<[Message], Error>) -> Void) {
-        database.child("\(conversationID.safeForDatabaseReferenceChild())/messages").observe(.value) { (snapshot) in
-            guard let value = snapshot.value as? [[String: Any]] else {
+        database.child("\(conversationID.safeForDatabaseReferenceChild())/messages").observe(.value) { [weak self] (snapshot) in
+            guard let self = self, let value = snapshot.value as? [[String: Any]] else {
                 completion(.failure(DatabaseError.failedToFetch))
                 return
             }
@@ -406,8 +408,8 @@ extension DatabaseManager {
         }
         
         // Add the new message to the messages array of the passed conversation ID
-        database.child("\(conversationID.safeForDatabaseReferenceChild())/messages").observeSingleEvent(of: .value) { [unowned self] (snapshot) in
-            guard var currentMessages = snapshot.value as? [[String: Any]] else {
+        database.child("\(conversationID.safeForDatabaseReferenceChild())/messages").observeSingleEvent(of: .value) { [weak self] (snapshot) in
+            guard let self = self, var currentMessages = snapshot.value as? [[String: Any]] else {
                 completion(false)
                 return
             }
