@@ -78,11 +78,8 @@ class ProfileViewController: UIViewController {
     
     fileprivate func signOut() {
         do {
-            // Remove the user's Sign In with Apple ID
-            if let providerID = Auth.auth().currentUser?.providerData.first?.providerID,
-                providerID == "apple.com" {
-                UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kUserID)
-            }
+            UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kUserID)
+            UserDefaults.standard.set(nil, forKey: UserDefaults.MessengerKeys.kProfileImageURL)
             try Auth.auth().signOut()
             showLoginScreen()
         } catch {
