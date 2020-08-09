@@ -76,7 +76,7 @@ class ChatViewController: MessagesViewController {
     
     public var isNewConversation = false
     public let otherUserID: String
-    private let conversationID: String?
+    private var conversationID: String?
     
     private var messages = [Message]()
     private var currentUser = Sender(senderId: UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID)!,
@@ -368,6 +368,9 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
                         print("message sent")
                         self.isNewConversation = false
                         inputBar.inputTextView.text = nil
+                        let newConversationID = "conversation_\(message.messageId)"
+                        self.conversationID = newConversationID
+                        self.startListeningForMessages(forConversationID: newConversationID)
                     } else {
                         print("failed to send message")
                     }
