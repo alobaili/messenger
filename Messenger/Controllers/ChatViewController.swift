@@ -83,6 +83,9 @@ class ChatViewController: MessagesViewController {
                                      displayName: "Abdulaziz",
                                      photoURL: "")
     
+    private var senderProfileImageURL: URL?
+    private var recipientProfileImageURL: URL?
+    
 
     init(userID: String, conversationID: String?) {
         otherUserID = userID
@@ -230,6 +233,8 @@ class ChatViewController: MessagesViewController {
 
 extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, MessagesDisplayDelegate {
     
+    
+    
     func currentSender() -> SenderType {
         currentUser
     }
@@ -251,6 +256,52 @@ extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, Messag
                 imageView.sd_setImage(with: imageURL)
             default:
                 break
+        }
+    }
+    
+    func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
+        if message.sender.senderId == currentUser.senderId {
+            // Show our image
+            if let senderProfileImageURL = senderProfileImageURL {
+                avatarView.sd_setImage(with: senderProfileImageURL)
+            } else {
+                guard let id = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else { return }
+                let path = "images/\(id.safeForDatabaseReferenceChild())_profile_image.png"
+                StorageManager.shared.getDownloadURL(for: path) { [weak self] (result) in
+                    guard let self = self else { return }
+                    
+                    switch result {
+                        case .success(let url):
+                            DispatchQueue.main.async {
+                                self.senderProfileImageURL = url
+                                avatarView.sd_setImage(with: url)
+                            }
+                        case .failure(let error):
+                            print(error)
+                    }
+                }
+            }
+        } else {
+            // Show recipient image
+            if let recipientProfileImageURL = recipientProfileImageURL {
+                avatarView.sd_setImage(with: recipientProfileImageURL)
+            } else {
+                let id = self.otherUserID
+                let path = "images/\(id.safeForDatabaseReferenceChild())_profile_image.png"
+                StorageManager.shared.getDownloadURL(for: path) { [weak self] (result) in
+                    guard let self = self else { return }
+                    
+                    switch result {
+                        case .success(let url):
+                            DispatchQueue.main.async {
+                                self.recipientProfileImageURL = url
+                                avatarView.sd_setImage(with: url)
+                        }
+                        case .failure(let error):
+                            print(error)
+                    }
+                }
+            }
         }
     }
     
