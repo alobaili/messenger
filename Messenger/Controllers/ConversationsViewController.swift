@@ -213,7 +213,10 @@ extension ConversationsViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            DatabaseManager.shared.deleteConversation(conversations[indexPath.row])
+            let conversation = conversations.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .automatic)
+            
+            DatabaseManager.shared.deleteConversation(conversation)
         }
     }
     
