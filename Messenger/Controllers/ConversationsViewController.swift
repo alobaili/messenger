@@ -52,8 +52,6 @@ class ConversationsViewController: UIViewController {
         
         setupAutoLayout()
         
-        fetchConversations()
-        
         startListeningForConversations()
     }
     
@@ -146,10 +144,6 @@ class ConversationsViewController: UIViewController {
         }
     }
     
-    private func fetchConversations() {
-        tableView.isHidden = false
-    }
-    
     private func startListeningForConversations() {
         guard let userID = UserDefaults.standard.string(forKey: UserDefaults.MessengerKeys.kUserID) else { return }
         
@@ -161,6 +155,8 @@ class ConversationsViewController: UIViewController {
             self.conversations = conversations
             
             DispatchQueue.main.async {
+                self.tableView.isHidden = self.conversations.isEmpty
+                self.noConversationsLabel.isHidden = !self.conversations.isEmpty
                 self.tableView.reloadData()
             }
         }
