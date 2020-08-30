@@ -16,7 +16,6 @@ target 'Messenger' do
   # Chat
   pod 'MessageKit'
   pod 'JGProgressHUD'
-  pod 'RealmSwift'
   pod 'SDWebImage'
   
 
