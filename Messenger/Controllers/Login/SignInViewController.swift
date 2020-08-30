@@ -45,7 +45,8 @@ class SignInViewController: UIViewController {
         textField.borderStyle = .roundedRect
         textField.placeholder = "Email address..."
         textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.textContentType = .emailAddress
+        textField.textContentType = .username
+        textField.keyboardType = .emailAddress
         return textField
     }()
     
